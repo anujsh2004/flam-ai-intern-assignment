@@ -1,0 +1,282 @@
+{
+  "sentences": {
+    "dev": 997,
+    "devtest": 1012
+  },
+  "articles": {
+    "dev": 281,
+    "devtest": 281
+  },
+  "domains": {
+    "dev": {
+      "wikinews": 348,
+      "wikibooks": 301,
+      "wikivoyage": 348
+    },
+    "devtest": {
+      "wikinews": 341,
+      "wikibooks": 351,
+      "wikivoyage": 320
+    }
+  },
+  "top_topics": [
+    [
+      "travel",
+      497
+    ],
+    [
+      "sports",
+      101
+    ],
+    [
+      "politics",
+      90
+    ],
+    [
+      "crime and law",
+      80
+    ],
+    [
+      "health",
+      44
+    ],
+    [
+      "safety",
+      40
+    ],
+    [
+      "science",
+      39
+    ],
+    [
+      "disasters and accidents",
+      38
+    ],
+    [
+      "geography",
+      34
+    ],
+    [
+      "history",
+      34
+    ]
+  ],
+  "languages": {
+    "eng_Latn": {
+      "sentences": 2009,
+      "words": 42855,
+      "codepoints": 257160,
+      "graphemes": 257160,
+      "bytes": 257386,
+      "mean_words_per_sentence": 21.33,
+      "duplicate_lines": 0,
+      "lines_with_latin_letters": 2009,
+      "latin_letter_share_of_codepoints": 0.8102,
+      "mean_codepoints_per_sentence": 128.0
+    },
+    "hin_Deva": {
+      "sentences": 2009,
+      "words": 50250,
+      "codepoints": 256462,
+      "graphemes": 168399,
+      "bytes": 659364,
+      "mean_words_per_sentence": 25.01,
+      "duplicate_lines": 0,
+      "lines_with_latin_letters": 86,
+      "latin_letter_share_of_codepoints": 0.0017,
+      "mean_codepoints_per_sentence": 127.66
+    },
+    "kan_Knda": {
+      "sentences": 2009,
+      "words": 31530,
+      "codepoints": 270103,
+      "graphemes": 176845,
+      "bytes": 733136,
+      "mean_words_per_sentence": 15.69,
+      "duplicate_lines": 0,
+      "lines_with_latin_letters": 133,
+      "latin_letter_share_of_codepoints": 0.0023
+    },
+    "tam_Taml": {
+      "sentences": 2009,
+      "words": 32909,
+      "codepoints": 300261,
+      "graphemes": 194191,
+      "bytes": 820442,
+      "mean_words_per_sentence": 16.38,
+      "duplicate_lines": 0,
+      "lines_with_latin_letters": 165,
+      "latin_letter_share_of_codepoints": 0.0027
+    }
+  },
+  "ratio_vs_eng": {
+    "eng_Latn": {
+      "words": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "codepoints": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "graphemes": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "bytes": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "hin_Deva": {
+      "words": [
+        1.1726,
+        1.1637,
+        1.1814
+      ],
+      "codepoints": [
+        0.9973,
+        0.991,
+        1.0038
+      ],
+      "graphemes": [
+        0.6548,
+        0.6504,
+        0.6593
+      ],
+      "bytes": [
+        2.5618,
+        2.545,
+        2.5791
+      ]
+    },
+    "kan_Knda": {
+      "words": [
+        0.7357,
+        0.7292,
+        0.7423
+      ],
+      "codepoints": [
+        1.0503,
+        1.0431,
+        1.0578
+      ],
+      "graphemes": [
+        0.6877,
+        0.6832,
+        0.6925
+      ],
+      "bytes": [
+        2.8484,
+        2.8285,
+        2.8693
+      ]
+    },
+    "tam_Taml": {
+      "words": [
+        0.7679,
+        0.7614,
+        0.7746
+      ],
+      "codepoints": [
+        1.1676,
+        1.1597,
+        1.1759
+      ],
+      "graphemes": [
+        0.7551,
+        0.7501,
+        0.7605
+      ],
+      "bytes": [
+        3.1876,
+        3.1646,
+        3.2113
+      ]
+    }
+  },
+  "ratio_vs_eng_by_split": {
+    "eng_Latn": {
+      "dev": 1.0,
+      "devtest": 1.0
+    },
+    "hin_Deva": {
+      "dev": 1.0015,
+      "devtest": 0.9933
+    },
+    "kan_Knda": {
+      "dev": 1.0541,
+      "devtest": 1.0468
+    },
+    "tam_Taml": {
+      "dev": 1.1672,
+      "devtest": 1.168
+    }
+  },
+  "bootstrap_codepoint_ratio": {
+    "eng_Latn": {
+      "article_clustered": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "iid": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "hin_Deva": {
+      "article_clustered": [
+        0.9973,
+        0.991,
+        1.0038
+      ],
+      "iid": [
+        0.9973,
+        0.9912,
+        1.0034
+      ]
+    },
+    "kan_Knda": {
+      "article_clustered": [
+        1.0503,
+        1.0431,
+        1.0578
+      ],
+      "iid": [
+        1.0503,
+        1.044,
+        1.0569
+      ]
+    },
+    "tam_Taml": {
+      "article_clustered": [
+        1.1676,
+        1.1597,
+        1.1759
+      ],
+      "iid": [
+        1.1676,
+        1.1601,
+        1.1745
+      ]
+    }
+  },
+  "toy_corpus_for_comparison": {
+    "eng": {
+      "sentences": 10,
+      "mean_words_per_sentence": 7.8,
+      "mean_codepoints_per_sentence": 44.8
+    },
+    "hin": {
+      "sentences": 10,
+      "mean_words_per_sentence": 6.1,
+      "mean_codepoints_per_sentence": 29.0
+    }
+  }
+}

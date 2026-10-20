@@ -1,0 +1,30 @@
+# Line-ending policy. Overrides the machine's core.autocrlf=true so every
+# checkout has identical bytes (A1/A2 counts depend on exact bytes).
+# One pattern per line; later lines override earlier ones.
+
+# Default: anything git detects as text is stored and checked out with LF
+*                   text=auto eol=lf
+
+# Authored text: always LF
+*.py                text eol=lf diff=python
+*.md                text eol=lf diff=markdown
+*.json              text eol=lf
+*.txt               text eol=lf
+*.csv               text eol=lf
+*.tsv               text eol=lf
+.gitignore          text eol=lf
+.gitattributes      text eol=lf
+
+# Starter kit: provided originals, audited byte-for-byte in A2 -> never converted
+starter_kit/**      -text -eol
+
+# FLORES text: not committed (D-11); if it ever is, keep the raw bytes
+partA/corpus/prepared/*.txt  -text -eol
+partA/corpus/prepared/*.tsv  -text -eol
+
+# Binary: never converted or diffed as text
+*.tar.gz            binary -eol
+*.zip               binary -eol
+*.pdf               binary -eol
+*.docx              binary -eol
+*.png               binary -eol

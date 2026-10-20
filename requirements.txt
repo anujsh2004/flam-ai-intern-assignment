@@ -1,0 +1,8 @@
+# Exact versions verified in .venv (Python 3.14.0) on 2026-10-21: partA/tests -> 42 passed.
+pytest==9.1.1
+regex==2026.9.29
+tiktoken==0.14.0
+tokenizers==0.23.3
+transformers==5.20.2
+numpy==2.5.4
+pandas==3.0.6

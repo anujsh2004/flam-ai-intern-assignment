@@ -18,7 +18,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 TESTS = ["partA/tests/test_v0_reproduction.py", "partA/tests/test_fertility_v1.py",
-         "partA/tests/test_experiments.py", "partA/tests/test_testsupport.py", "partA/tests/test_f5_seed.py"]
+         "partA/tests/test_experiments.py", "partA/tests/test_testsupport.py", "partA/tests/test_f5_seed.py",
+         "partA/tests/test_ablation.py", "partA/tests/test_report.py", "partA/tests/test_audit_evidence.py"]
 
 # (name, file, original snippet, mutated snippet); each snippet must occur exactly once
 MUTANTS = [
@@ -84,6 +85,22 @@ MUTANTS = [
     ("FLORES drops devtest", "partA/audit/experiments.py", '+ v1.read_raw_lines(FLORES / f"{code}.devtest.txt")', ""),
     ("F1 variant equals v0", "partA/audit/experiments.py", '"F1": v1.replace(v1.V0, split="whitespace"),', '"F1": v1.V0,'),
     ("own-metrics verdict uses ratios too", "partA/audit/experiments.py", "threshold_verdict({k: m[k] for k in own})", "threshold_verdict(m)"),
+    ("F9 compares tokenizer a with itself", "partA/audit/experiments.py",
+     "a, b = measure(cfg, encode_a, corpora), measure(cfg, encode_b, corpora)",
+     "a, b = measure(cfg, encode_a, corpora), measure(cfg, encode_a, corpora)"),
+    ("F9 registry points at XLM-R", "partA/audit/experiments.py",
+     'TOKENIZER_FINDINGS = {"F9": ("gpt2", LLAMA)}', 'TOKENIZER_FINDINGS = {"F9": ("gpt2", XLMR)}'),
+    ("ablation leave-one-out keeps the V1 value", "partA/audit/ablation.py",
+     "{f: getattr(v1.V0, f)}) for k, f in V1_FIXES.items()}", "{f: getattr(v1.V1, f)}) for k, f in V1_FIXES.items()}"),
+    ("ablation cumulative adds v0 values", "partA/audit/ablation.py",
+     "cfg = v1.replace(cfg, **{f: getattr(v1.V1, f)})", "cfg = v1.replace(cfg, **{f: getattr(v1.V0, f)})"),
+    ("ablation contribution sign flipped", "partA/audit/ablation.py",
+     '"delta_pct_v1_vs_without": pct(full, m)', '"delta_pct_v1_vs_without": pct(m, full)'),
+    ("report drops the F8 tok/char tables", "partA/audit/report.py", 'if name.startswith("F8"):', "if False:"),
+    ("report shows tok/char ratio as the instrument ratio", "partA/audit/report.py",
+     "| {r['b'][corpus][lang]['fertility_ratio_vs_eng']:.3f} ", "| {r['b'][corpus][lang]['tok_per_char_ratio_vs_eng']:.3f} "),
+    ("missing Llama never reported", "partA/testsupport.py",
+     "        v1.load_tokenizer(LLAMA)\n    except Exception as exc:", "        pass\n    except Exception as exc:"),
     ("v0 SHA-256 guard disabled", "partA/audit/v0.py", "if got != V0_SHA256:", "if False:"),
     ("F5 tech debt reintroduced in v1", "partA/fertility_v1.py",
      "import argparse\n", "import argparse\nimport random\n\nrandom.seed(1337)\n"),

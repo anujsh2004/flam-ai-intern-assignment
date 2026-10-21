@@ -12,6 +12,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.flores  # reads prepared FLORES text
+
 PREPARED = Path(__file__).resolve().parents[1] / "corpus" / "prepared"
 LANGS = {"eng": "eng_Latn", "hin": "hin_Deva", "kan": "kan_Knda", "tam": "tam_Taml"}
 EXPECTED_COUNTS = {"dev": 997, "devtest": 1012}

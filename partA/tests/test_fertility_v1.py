@@ -15,7 +15,7 @@ TOY = ROOT / "starter_kit" / "corpus_sample"
 FLORES = ROOT / "partA" / "corpus" / "prepared"
 
 CORPORA = [TOY / "eng_sample.txt", TOY / "hin_sample.txt"] + [
-    FLORES / f"{lang}.{split}.txt"
+    pytest.param(FLORES / f"{lang}.{split}.txt", marks=pytest.mark.flores)
     for lang in ("eng_Latn", "hin_Deva", "kan_Knda", "tam_Taml")
     for split in ("dev", "devtest")
 ]
@@ -33,6 +33,7 @@ def gpt2(v0):
     return v0.load_tokenizer("gpt2")
 
 
+@pytest.mark.gpt2
 @pytest.mark.parametrize("path", CORPORA, ids=lambda p: p.name)
 def test_given_v0_config_when_analyzing_then_identical_to_original(path, v0, gpt2):
     import fertility_v1 as v1
@@ -105,6 +106,7 @@ def test_given_pasted_text_with_blank_lines_when_read_then_they_are_skipped(tmp_
     assert v1.analyze(lines, one_token_per_word, fixed)["fertility"] == pytest.approx(1.0)
 
 
+@pytest.mark.gpt2
 def test_given_pasted_text_when_run_with_v0_then_matches_original_cli(tmp_path):
     p = tmp_path / "pasted.txt"
     p.write_text(PASTED, encoding="utf-8")
@@ -117,6 +119,7 @@ def test_given_pasted_text_when_run_with_v0_then_matches_original_cli(tmp_path):
     assert run(ROOT / "partA" / "fertility_v1.py", "--v0") == run(ROOT / "starter_kit" / "fertility.py")
 
 
+@pytest.mark.gpt2
 def test_given_v0_flag_when_run_as_cli_then_stdout_matches_original_byte_for_byte():
     args = ["--corpus", f"eng={TOY / 'eng_sample.txt'}", "--corpus", f"hin={TOY / 'hin_sample.txt'}",
             "--tokenizer", "gpt2"]

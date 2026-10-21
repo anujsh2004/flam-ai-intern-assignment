@@ -49,6 +49,7 @@ def test_given_change_in_one_language_only_when_judged_then_verdicts_exist_per_l
     assert res["threshold_verdict"]["toy"]["by_language_own_metrics"] == {"eng": "material", "hin": "negligible"}
 
 
+@pytest.mark.flores
 def test_given_real_data_when_corpora_load_then_sizes_match_a1():
     from audit.experiments import load_corpora
 
@@ -69,6 +70,8 @@ def test_given_findings_registry_then_each_variant_differs_from_v0_in_exactly_on
         assert len(diff) == 1, (name, diff)
 
 
+@pytest.mark.flores
+@pytest.mark.gpt2
 def test_given_committed_results_when_recomputed_then_identical():
     """Guards against stale or hand-edited evidence (as A1's stats test does)."""
     import json

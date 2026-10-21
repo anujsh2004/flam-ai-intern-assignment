@@ -9,6 +9,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 TOY = ROOT / "starter_kit" / "corpus_sample"
 
@@ -34,6 +36,7 @@ def test_given_modified_original_when_loading_then_guard_refuses(tmp_path, monke
         v0.load_v0()
 
 
+@pytest.mark.gpt2
 def test_given_toy_corpus_when_v0_analyzes_then_report_numbers_reproduce():
     from audit.v0 import load_v0
 
@@ -46,6 +49,7 @@ def test_given_toy_corpus_when_v0_analyzes_then_report_numbers_reproduce():
     assert (round(hin[0], 2), round(hin[1], 3)) == (7.45, 1.579)
 
 
+@pytest.mark.gpt2
 def test_given_report_command_when_run_as_cli_then_ratio_line_is_589():
     out = subprocess.run(
         [sys.executable, str(ROOT / "starter_kit" / "fertility.py"),

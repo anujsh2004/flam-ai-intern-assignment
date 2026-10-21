@@ -1,9 +1,13 @@
 # Project state
 
-_Last updated: 2026-10-21 (A1 merged into `main`; A2 started on `part-a-audit`)_
+_Last updated: 2026-10-21 (A2 in progress on `part-a-audit`: steps 1–5 and an evaluation round done)_
 
 ## Current phase / task
-Phase 2 — A2 audit of `fertility.py`, on branch `part-a-audit` (created from `main` at `48f28fe`). The A2 plan, pre-registered verdicts and threshold are recorded next in `docs/plan.md` and `docs/decision.md`. Order: A1 -> A2 -> A3 -> A4 -> B -> C (D-10).
+Phase 2 — A2 audit of `fertility.py`, on branch `part-a-audit` (from `main` at `48f28fe`). Order: A1 -> A2 -> A3 -> A4 -> B -> C (D-10).
+- **Done:** steps 1–5 (pre-registration, v0 reproduced exactly, v1 skeleton, F1 measured: material, kan +2.78%) and an evaluation round (independent recompute diff 0, deterministic, mutation 19/19, fresh-clone skips).
+- **Next:** step 6, F3 `.lower()` under gpt2 and XLM-R.
+- **Flagged:** F9 (step 12) waits on Llama-3.2-3B access.
+- **Test status:** `partA/tests` 79 passed. `partA/audit/mutation_check.py` 19/19 killed.
 
 ## Completed
 - **Phase 0 foundation.** Git history was reset at the user's request on 2026-10-21 and restarted the same day.

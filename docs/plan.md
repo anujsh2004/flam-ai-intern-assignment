@@ -84,16 +84,25 @@ Pre-registered on 2026-10-21, **before any A2 measurement** (see D-13, D-14, D-0
 To-do (TDD; one granular commit per step):
 - [x] 1. Housekeeping: state.md records the merge and the branch (`3a5f83d`)
 - [x] 2. Pre-registration: this section + D-13, D-14, D-04, D-15 (Jev rejected)
-- [ ] 3. Reproduce v0: characterisation test runs the unmodified `starter_kit/fertility.py` on the toy corpus and expects REPORT_v0's 1.27 / 7.45 (and 0.226 / 1.579). A mismatch becomes a finding.
-- [ ] 4. `fertility_v1.py` skeleton: `--v0` output identical to the original on toy + FLORES
-- [ ] 5. F1 `--split space|whitespace`: fake-tokenizer test -> code -> commit; measured delta -> commit
+- [x] 3. Reproduce v0 (`46b3921`): exact; ratio 5.887
+- [x] 4. `fertility_v1.py` skeleton (`ae95181`): `--v0` exact on toy + 8 FLORES files
+- [x] 5. F1 (`e542deb` flag, `22cf99f` harness, `854a763` evidence): material, kan +2.78%
+- [x] 5e. Evaluation round:
+  - independent recompute (diff 0); determinism;
+  - gap tests (`19aee1b`);
+  - V1 and `--v0` base (`ded8448`);
+  - per-language verdicts (`be9454c`);
+  - fresh-clone skips (`2532cea`);
+  - mutation check, 19/19 (`59bdddc`).
+
+  **Rule for every later step:** rerun `python partA/audit/mutation_check.py` and add mutants for new code.
 - [ ] 6. F3 `--lowercase/--no-lowercase`: test -> code; deltas under gpt2 and XLM-R
 - [ ] 7. F4 `--nfc/--no-nfc`: test -> code; deltas under gpt2 and XLM-R
 - [ ] 8. F2 `--aggregate macro|micro`: test -> code; delta
 - [ ] 9. F5: remove the unused `random` seed; test proves output unchanged
 - [ ] 10. F6 `--special-tokens`: test -> code; delta (possible false-fertility inflation)
 - [ ] 11. F7/F8 `--denominator words|codepoints|graphemes|bytes|sentence` (reuse `partA/units.py`): test -> code; cost-ratio comparison
-- [ ] 12. F9: Llama-3.2-3B proxy vs gpt2 ratios (needs HF access approval)
+- [ ] 12. F9: Llama-3.2-3B proxy vs gpt2 ratios. **FLAGGED (user, 2026-10-21):** HF access is pending. The only blocker is for F9; all other steps proceed.
 - [ ] 13. `run_audit.py`: isolated deltas, leave-one-out ablation, cumulative -> `results.json` + `A2_results.md`; staleness test
 - [ ] 14. `A2_audit.md`: findings in evidence-rule format + REPORT_v0 §1 claim audit
 - [ ] 15. NOTEBOOK / state / plan / decision update; merge to `main` only after approval

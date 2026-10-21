@@ -129,3 +129,21 @@ Next: commit this notebook and `state.md` update, merge A1 into `main` after app
 - grep found 519 raw lines with a double space versus 507 changed; the other 12 have the double space only at the line ends, which `strip()` already removes.
 - Verdict unchanged (code bug). The blast-radius expectation is revised and reported to the user.
 - Direction: v0 *under*-states fertility, because the denominator is inflated.
+
+**Evaluation round on the A2 work (before more findings).**
+- **Independent recomputation:** F1 recomputed with plain tiktoken and no project code. The max absolute difference vs the harness is **0** across all 6 corpus/language pairs.
+- **Determinism:** two runs give byte-identical JSON, identical to the committed file.
+- **Mutation testing, first run:** **10/14** killed. The survivors exposed untested paths:
+  - blank-line skipping;
+  - `load_corpora()`;
+  - the FINDINGS registry and committed results (no staleness test);
+  - the SHA-256 guard's failure branch.
+- **User claim, "the corpus contains a lot of blank lines":** measured as **0 empty and 0 whitespace-only lines** in all 8 raw FLORES files and both toy files. The blank-line test was still added, framed around *pasted* defense input: with the fix on, a blank line would raise ZeroDivisionError.
+- **Gap tests** (`19aee1b`) took mutation to **14/14**.
+- **Refactors from the review, each test-first:**
+  - `V1` is the single source of corrected defaults. `--v0` is an overridable base, so `--v0 --split whitespace` isolates one fix (`ded8448`).
+  - Per-language verdicts (`be9454c`). The fake-data test surfaced a subtlety: if only English moves, every other language's *ratio* moves too. So verdicts are reported both with ratios and on own metrics only. On FLORES, F1 is material for kan only (eng/hin/tam negligible). The staleness test caught the old JSON structure before regeneration, which shows it works.
+  - Fresh-clone behaviour: tests needing FLORES text or gpt2 now skip with "run `python partA/corpus/prep.py`" (`2532cea`). Simulated fresh clone: 40 passed, 39 skipped, 0 failed.
+- **Mutation check committed** (`59bdddc`), 19 mutants. One mutant inverted the skip logic and exited **0** with only 19/35 tests passing. A naive checker would have scored it as surviving; counting passes against the baseline caught it. **19/19.**
+- **Corrections to my own wording:** an earlier mutant was named "micro instead of macro", but it only perturbed the result by a factor. It is renamed "aggregation perturbed"; real micro-vs-macro tests come with F2.
+- **D-14 amended:** the "conclusion unchanged" half will be defined later, post-hoc and disclosed as such.

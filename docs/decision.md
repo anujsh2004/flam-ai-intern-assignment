@@ -151,7 +151,7 @@ Verdicts are fixed before measuring. Every finding is still measured (evidence r
 
 | # | Location | Verdict | Key measurement |
 |---|---|---|---|
-| F1 | `fertility.py` L62 `split(" ")` | Code bug (small blast radius) | Δ on toy and FLORES |
+| F1 | `fertility.py` L62 `split(" ")` | Code bug. *Pre-registered* as "small blast radius"; **revised 2026-10-21 after measurement, user-accepted**: material, up to +2.78% fertility on FLORES Kannada (507/2,009 lines) | Δ on toy and FLORES |
 | F2 | L64–67 mean of per-line ratios | Method/decision flaw, fixable (not a code bug) | macro vs micro (ratio of totals) |
 | F3 | L60 `.lower()` | Code bug: measured text must equal served text; English and Indic counts are separate measurements | Δ on the English baseline and on the hin/eng ratio, under gpt2 and XLM-R |
 | F4 | L49 NFC | **Looks suspicious but fine** (user decision); effect is tokenizer-dependent | Δ under gpt2 and XLM-R, recorded as evidence |
@@ -169,6 +169,10 @@ Scope: script and metric (F1–F9), plus an audit of REPORT_v0 §1 claims in `pa
 - **Negligible:** |Δ| < 1% on every reported metric **and** the report's conclusion is unchanged. Otherwise "material", reported with magnitude.
 - **Order of reporting:** isolated delta per fix (vs v0), then leave-one-out ablation from v1, then cumulative. Each step gets a note.
 - This threshold is fixed for A2 and will not be changed after seeing results.
+- **Amendment 1 (2026-10-21, user decision):**
+  - **What changes:** the "report's conclusion unchanged" half of the rule is **not yet operationalised**. It will be defined after all F1–F9 metrics have been seen, then amended in as they are reviewed.
+  - **Disclosure:** this half is therefore *post-hoc*, and the audit must say so wherever it is used.
+  - **What doesn't change:** the 1% numeric half is unchanged and still pre-registered. Until then the harness reports the 1% half only, at three levels: corpus overall, per language (incl. ratios vs eng), and per language own metrics.
 
 ## D-15 Jev (TypeSafe AI hosted classifier) — Rejected for A1–A4/B; pattern noted for Part C (2026-10-21)
 - **What it is:** a hosted, typed classification model (yes/no, choice, ordered score) with claimed calibration. It does not generate text.

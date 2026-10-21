@@ -218,3 +218,18 @@ Next: commit this notebook and `state.md` update, merge A1 into `main` after app
   - "v1 line order depends on RNG" (`random.shuffle` of lines) -> killed, almost certainly by the AST test (54/55 passed; the failing test was not identified).
 - **Prediction recorded before the run:** the shuffle might survive as an equivalent mutant, because both aggregations are order-invariant sums apart from float rounding. Not settled by this run, since the AST test probably fired first.
 - Mutation **31/31**. Progress is invisible in background runs because Python buffers redirected output; future runs use `python -u`.
+
+**Step 10, F6 `add_special_tokens=False`** (user: test whether it could be a false-fertility case).
+- **Design:** the harness passes one tokenizer to both configs, so special tokens are modelled as a per-sequence count that each tokenizer reports: tiktoken 0, HF `num_special_tokens_to_add()`.
+- **The shortcut is verified, not assumed:** on 400 real FLORES lines (kan + eng), `len(encode(s)) + count` equals XLM-R's own `add_special_tokens=True` length in every case.
+- A shared `count_tokens()` keeps `analyze()` and the changed-line counter in agreement. No committed results needed regenerating, thanks to the stable variant labels.
+- **Measured** (`experiments.py F6`):
+  - gpt2: exactly 0 everywhere;
+  - XLM-R toy: eng **+20.81%**, hin **+23.74%**;
+  - XLM-R FLORES: eng +7.35%, hin +6.02%, kan +5.58%, tam +5.59%, every line changed. Ratios vs eng move −1.24% to −1.65% (a constant per-line overhead pulls ratios towards 1).
+- **Reading:** the *counterfactual* is material false fertility. Counting `<s></s>` per line would inflate fertility, by more on short lines (toy 7.8 vs FLORES 21.3 words per sentence).
+- So v0's `False` is the correct choice for a per-text fertility metric: **looks suspicious but fine**, with evidence. The size of the counterfactual depends on the tokenizer (0 for gpt2) and on line length.
+- **Open, for A3, not claimed here:** real serving pays special tokens once per *request*, not per sentence. That belongs in the cost model, not in fertility.
+- **Process slip.** The F6 mutation run aborted after 25/25 kills. I had changed `lines_changed` to use `count_tokens()` but not the mutant that targets that line, so the checker refused a snippet found 0 times. The run was incomplete, not a pass.
+  - Fix: retargeted the mutant and re-ran the full check.
+  - Prevention: a fast test in the normal suite asserts that every mutant snippet occurs exactly once. Run against a copy with the stale snippet restored, it fails in 0.07 s and names the mutant.

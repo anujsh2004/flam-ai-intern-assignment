@@ -9,6 +9,7 @@ negligible/material line follow D-14 (|delta| < 1% on every reported metric).
 import argparse
 import json
 import sys
+from dataclasses import fields
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -28,6 +29,7 @@ XLMR = "hf:FacebookAI/xlm-roberta-base@e73636d4f797dec63c3081bb6ed5c7b0bb3f2089"
 FINDINGS = {
     "F1": v1.replace(v1.V0, split="whitespace"),
     "F3": v1.replace(v1.V0, lowercase=False),
+    "F4": v1.replace(v1.V0, nfc=False),
 }
 
 
@@ -88,9 +90,14 @@ def compare(before_cfg, after_cfg, encode, corpora) -> dict:
     return {"before": before, "after": after, "delta_pct": delta, "lines_changed": changed, "threshold_verdict": verdict}
 
 
+def changed_fields(cfg, base=v1.V0) -> dict:
+    return {f.name: getattr(cfg, f.name) for f in fields(cfg) if getattr(cfg, f.name) != getattr(base, f.name)}
+
+
 def result_record(finding: str, tokenizer: str, cfg, res: dict) -> dict:
-    """The exact JSON record committed under results/ (rebuilt by the staleness test)."""
-    return {"finding": finding, "tokenizer": tokenizer, "variant": repr(cfg), **res}
+    """The exact JSON record committed under results/ (rebuilt by the staleness test).
+    The variant is stored as its difference from v0, so new Config fields don't churn old records."""
+    return {"finding": finding, "tokenizer": tokenizer, "variant": changed_fields(cfg), **res}
 
 
 def main() -> None:

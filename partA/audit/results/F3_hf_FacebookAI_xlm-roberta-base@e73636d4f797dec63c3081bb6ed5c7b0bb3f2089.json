@@ -1,7 +1,9 @@
 {
   "finding": "F3",
   "tokenizer": "hf:FacebookAI/xlm-roberta-base@e73636d4f797dec63c3081bb6ed5c7b0bb3f2089",
-  "variant": "Config(split='space', lowercase=False)",
+  "variant": {
+    "lowercase": false
+  },
   "before": {
     "toy": {
       "eng": {

@@ -25,6 +25,9 @@ class Config:
     # F3: True = lowercase before tokenizing (v0). Served text is not lowercased,
     #     so this measures text the model never sees and changes eng but not Indic.
     lowercase: bool = True
+    # F4: True = Unicode NFC before tokenizing (v0). Pre-registered as "looks
+    #     suspicious but fine" (D-13); V1 keeps it. Effect is tokenizer-dependent.
+    nfc: bool = True
 
 
 V0 = Config()  # original fertility.py behaviour
@@ -68,6 +71,8 @@ def read_raw_lines(path: Path) -> list[str]:
 
 def prepare(lines: list[str], cfg: Config) -> list[str]:
     """Config-dependent text preparation applied before tokenizing."""
+    if not cfg.nfc:
+        return list(lines)
     return [unicodedata.normalize("NFC", line) for line in lines]
 
 
@@ -98,10 +103,12 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--split", choices=SPLITS, default=None, help="F1: word splitting (V1: whitespace)")
     ap.add_argument("--lowercase", action=argparse.BooleanOptionalAction, default=None,
                     help="F3: lowercase before tokenizing (V1: --no-lowercase)")
+    ap.add_argument("--nfc", action=argparse.BooleanOptionalAction, default=None,
+                    help="F4: Unicode NFC before tokenizing (V1: --nfc)")
     return ap
 
 
-FIX_FLAGS = ("split", "lowercase")
+FIX_FLAGS = ("split", "lowercase", "nfc")
 
 
 def config_from_args(args) -> Config:

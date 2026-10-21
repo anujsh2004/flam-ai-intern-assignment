@@ -32,6 +32,8 @@ MUTANTS = [
      'V1 = replace(V0, split="whitespace", lowercase=False)', 'V1 = replace(V0, split="whitespace", lowercase=True)'),
     ("skip NFC in prepare", "partA/fertility_v1.py",
      'return [unicodedata.normalize("NFC", line) for line in lines]', "return list(lines)"),
+    ("F4 flag ignored: always NFC", "partA/fertility_v1.py", "if not cfg.nfc:\n        return list(lines)", "pass"),
+    ("F4 uses NFD instead of NFC", "partA/fertility_v1.py", 'unicodedata.normalize("NFC", line)', 'unicodedata.normalize("NFD", line)'),
     ("aggregation perturbed", "partA/fertility_v1.py",
      'return {"fertility": sum(per_line_fertility) / n,', 'return {"fertility": sum(per_line_fertility) / n * 1.0000001,'),
     ("blank lines no longer skipped", "partA/fertility_v1.py",

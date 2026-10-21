@@ -1,7 +1,9 @@
 {
   "finding": "F3",
   "tokenizer": "gpt2",
-  "variant": "Config(split='space', lowercase=False)",
+  "variant": {
+    "lowercase": false
+  },
   "before": {
     "toy": {
       "eng": {

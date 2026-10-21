@@ -50,6 +50,15 @@ def test_given_change_in_one_language_only_when_judged_then_verdicts_exist_per_l
 
 
 @pytest.mark.flores
+def test_given_variant_when_recorded_then_only_fields_differing_from_v0_are_stored():
+    """Stable labels: adding a new Config field must not change existing records."""
+    import fertility_v1 as v1
+    from audit.experiments import result_record
+
+    rec = result_record("F3", "gpt2", v1.replace(v1.V0, lowercase=False), {})
+    assert rec["variant"] == {"lowercase": False}
+
+
 def test_given_real_data_when_corpora_load_then_sizes_match_a1():
     from audit.experiments import load_corpora
 

@@ -121,6 +121,36 @@ def test_f3_given_cli_lowercase_flags_then_config_follows():
     assert cfg_for("--lowercase") == v1.replace(v1.V1, lowercase=True)
 
 
+def one_token_per_codepoint(s):
+    return list(s)
+
+
+PRECOMPOSED_ZA = "ज़"  # ज़ as one code point, as FLORES Hindi stores it (A1)
+
+
+def test_f4_given_v0_when_precomposed_nukta_then_nfc_decomposes_it_before_tokenizing():
+    import fertility_v1 as v1
+
+    # NFC maps U+095B -> U+091C U+093C (composition exclusion): 2 code points
+    assert v1.prepare([PRECOMPOSED_ZA], v1.V0) == ["ज़"]
+    assert v1.analyze(v1.prepare([PRECOMPOSED_ZA], v1.V0), one_token_per_codepoint, v1.V0)["fertility"] == 2.0
+
+
+def test_f4_given_no_nfc_when_precomposed_nukta_then_raw_text_is_tokenized():
+    import fertility_v1 as v1
+
+    cfg = v1.replace(v1.V0, nfc=False)
+    assert v1.prepare([PRECOMPOSED_ZA], cfg) == [PRECOMPOSED_ZA]
+    assert v1.analyze(v1.prepare([PRECOMPOSED_ZA], cfg), one_token_per_codepoint, cfg)["fertility"] == 1.0
+
+
+def test_f4_given_cli_nfc_flags_then_config_follows_and_v1_keeps_nfc():
+    import fertility_v1 as v1
+
+    assert v1.V0.nfc is True and v1.V1.nfc is True  # F4 pre-registered as "fine": V1 keeps it
+    assert cfg_for("--no-nfc") == v1.replace(v1.V1, nfc=False)
+
+
 @pytest.mark.parametrize("spec,expected", [
     ("gpt2", ("tiktoken", "gpt2", None)),
     ("hf:xlm-roberta-base", ("hf", "xlm-roberta-base", None)),

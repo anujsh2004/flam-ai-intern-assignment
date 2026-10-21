@@ -102,3 +102,8 @@ Next: commit this notebook and `state.md` update, merge A1 into `main` after app
 - Added `audit/v0.py`, which loads `starter_kit/fertility.py` only if its SHA-256 matches the provided file (`93528e33…`). Result: 3 passed.
 - Unrounded: eng 1.2652 / 0.2256, hin 7.4485 / 1.5791, ratio 5.887.
 - Conclusion: the report faithfully prints what the code computes. A2 is therefore about whether the code and the metric are right, not about transcription errors.
+
+**Step 4, v1 skeleton.**
+- TDD: 11 tests first, all red (no module).
+- `fertility_v1.py` with an empty `Config` (V0 behaviour only): `analyze` returns the *exact* same floats as the original on the toy corpus and all 8 FLORES files. `--v0` CLI stdout is byte-identical to the original. 11 passed; suite 58.
+- Note: the skeleton already omits the unused `import random` / `random.seed(1337)` (F5). The proof that this changes nothing is owed in step 9.

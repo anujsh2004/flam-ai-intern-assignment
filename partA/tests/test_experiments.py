@@ -37,6 +37,18 @@ def test_given_f1_variant_when_compared_then_delta_and_changed_lines_are_exact()
     assert res["after"]["toy"]["hin"]["fertility_ratio_vs_eng"] == pytest.approx(1.0)
 
 
+def test_given_change_in_one_language_only_when_judged_then_verdicts_exist_per_language_and_corpus():
+    import fertility_v1 as v1
+    from audit.experiments import compare
+
+    res = compare(v1.V0, v1.replace(v1.V0, split="whitespace"), one_token_per_word, CORPORA)
+    # eng fertility +20%; hin unchanged. Note hin's ratio vs eng changes (1.2 -> 1.0), so
+    # hin is material through its ratio even though its own fertility did not move.
+    assert res["threshold_verdict"]["toy"]["overall"] == "material"
+    assert res["threshold_verdict"]["toy"]["by_language"] == {"eng": "material", "hin": "material"}
+    assert res["threshold_verdict"]["toy"]["by_language_own_metrics"] == {"eng": "material", "hin": "negligible"}
+
+
 def test_given_real_data_when_corpora_load_then_sizes_match_a1():
     from audit.experiments import load_corpora
 

@@ -73,8 +73,13 @@ def compare(before_cfg, after_cfg, encode, corpora) -> dict:
         corpus: {lang: lines_changed(before_cfg, after_cfg, encode, lines) for lang, lines in langs.items()}
         for corpus, langs in corpora.items()
     }
+    own = ("fertility", "tok_per_char")  # a language's own metrics, excluding ratios vs eng
     verdict = {
-        corpus: threshold_verdict({f"{lang}.{k}": d for lang, m in langs.items() for k, d in m.items()})
+        corpus: {
+            "overall": threshold_verdict({f"{lang}.{k}": d for lang, m in langs.items() for k, d in m.items()}),
+            "by_language": {lang: threshold_verdict(m) for lang, m in langs.items()},
+            "by_language_own_metrics": {lang: threshold_verdict({k: m[k] for k in own}) for lang, m in langs.items()},
+        }
         for corpus, langs in delta.items()
     }
     return {"before": before, "after": after, "delta_pct": delta, "lines_changed": changed, "threshold_verdict": verdict}
@@ -100,8 +105,10 @@ def main() -> None:
 
     print(f"{args.finding} ({args.tokenizer}): {res['variant']}  -> {out.relative_to(ROOT)}")
     for corpus, langs in res["delta_pct"].items():
-        print(f"[{corpus}] verdict: {res['threshold_verdict'][corpus]}")
+        print(f"[{corpus}] verdict: {res['threshold_verdict'][corpus]['overall']}")
         for lang, m in langs.items():
+            print(f"  {lang}: {res['threshold_verdict'][corpus]['by_language'][lang]} "
+                  f"(own metrics: {res['threshold_verdict'][corpus]['by_language_own_metrics'][lang]})")
             b, a = res["before"][corpus][lang], res["after"][corpus][lang]
             print(f"  {lang}: fertility {b['fertility']:.4f} -> {a['fertility']:.4f} ({m['fertility']:+.2f}%), "
                   f"ratio {b['fertility_ratio_vs_eng']:.4f} -> {a['fertility_ratio_vs_eng']:.4f} "

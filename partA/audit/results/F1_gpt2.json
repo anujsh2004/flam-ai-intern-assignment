@@ -141,7 +141,31 @@
     }
   },
   "threshold_verdict": {
-    "toy": "material",
-    "flores": "material"
+    "toy": {
+      "overall": "material",
+      "by_language": {
+        "eng": "material",
+        "hin": "material"
+      },
+      "by_language_own_metrics": {
+        "eng": "material",
+        "hin": "material"
+      }
+    },
+    "flores": {
+      "overall": "material",
+      "by_language": {
+        "eng": "negligible",
+        "hin": "negligible",
+        "kan": "material",
+        "tam": "negligible"
+      },
+      "by_language_own_metrics": {
+        "eng": "negligible",
+        "hin": "negligible",
+        "kan": "material",
+        "tam": "negligible"
+      }
+    }
   }
 }

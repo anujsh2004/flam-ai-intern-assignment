@@ -80,14 +80,20 @@ def compare(before_cfg, after_cfg, encode, corpora) -> dict:
     return {"before": before, "after": after, "delta_pct": delta, "lines_changed": changed, "threshold_verdict": verdict}
 
 
+def result_record(finding: str, tokenizer: str, cfg, res: dict) -> dict:
+    """The exact JSON record committed under results/ (rebuilt by the staleness test)."""
+    return {"finding": finding, "tokenizer": tokenizer, "variant": repr(cfg), **res}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("finding", choices=sorted(FINDINGS))
     ap.add_argument("--tokenizer", default="gpt2")
     args = ap.parse_args()
 
-    res = compare(v1.V0, FINDINGS[args.finding], v1.load_tokenizer(args.tokenizer), load_corpora())
-    res = {"finding": args.finding, "tokenizer": args.tokenizer, "variant": repr(FINDINGS[args.finding]), **res}
+    cfg = FINDINGS[args.finding]
+    res = result_record(args.finding, args.tokenizer, cfg,
+                        compare(v1.V0, cfg, v1.load_tokenizer(args.tokenizer), load_corpora()))
     out = HERE / "results" / f"{args.finding}_{args.tokenizer.replace('/', '_').replace(':', '_')}.json"
     out.parent.mkdir(exist_ok=True)
     out.write_text(json.dumps(res, indent=2) + "\n", encoding="utf-8", newline="\n")

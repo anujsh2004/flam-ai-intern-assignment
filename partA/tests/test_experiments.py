@@ -37,6 +37,45 @@ def test_given_f1_variant_when_compared_then_delta_and_changed_lines_are_exact()
     assert res["after"]["toy"]["hin"]["fertility_ratio_vs_eng"] == pytest.approx(1.0)
 
 
+def test_given_real_data_when_corpora_load_then_sizes_match_a1():
+    from audit.experiments import load_corpora
+
+    corpora = load_corpora()
+    assert {lang: len(lines) for lang, lines in corpora["toy"].items()} == {"eng": 10, "hin": 10}
+    assert {lang: len(lines) for lang, lines in corpora["flores"].items()} == {
+        "eng": 2009, "hin": 2009, "kan": 2009, "tam": 2009}
+
+
+def test_given_findings_registry_then_each_variant_differs_from_v0_in_exactly_one_field():
+    from dataclasses import fields
+
+    import fertility_v1 as v1
+    from audit.experiments import FINDINGS
+
+    for name, cfg in FINDINGS.items():
+        diff = [f.name for f in fields(v1.Config) if getattr(cfg, f.name) != getattr(v1.V0, f.name)]
+        assert len(diff) == 1, (name, diff)
+
+
+def test_given_committed_results_when_recomputed_then_identical():
+    """Guards against stale or hand-edited evidence (as A1's stats test does)."""
+    import json
+    from pathlib import Path
+
+    import fertility_v1 as v1
+    from audit.experiments import FINDINGS, compare, load_corpora, result_record
+
+    results = sorted((Path(__file__).resolve().parents[1] / "audit" / "results").glob("*.json"))
+    assert results, "no committed results found"
+    corpora = load_corpora()
+    for path in results:
+        saved = json.loads(path.read_text(encoding="utf-8"))
+        cfg = FINDINGS[saved["finding"]]
+        fresh = result_record(saved["finding"], saved["tokenizer"], cfg,
+                              compare(v1.V0, cfg, v1.load_tokenizer(saved["tokenizer"]), corpora))
+        assert json.loads(json.dumps(fresh)) == saved, path.name
+
+
 @pytest.mark.parametrize("deltas,expected", [
     ({"a": 0.99, "b": -0.5}, "negligible"),
     ({"a": 1.0, "b": 0.0}, "material"),

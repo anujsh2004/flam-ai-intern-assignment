@@ -68,6 +68,34 @@ def test_f1_given_cli_split_flag_then_config_uses_it():
     assert v1.config_from_args(v1.build_parser().parse_args(["--corpus", "x=y", "--v0"])) == v1.V0
 
 
+PASTED = "First line here.\n\n   \n\tSecond  line.\n\n"  # blank, whitespace-only, tab, double space
+
+
+def test_given_pasted_text_with_blank_lines_when_read_then_they_are_skipped(tmp_path):
+    """Our corpora have no blank lines (measured), but pasted defense input may.
+    A blank line must never reach analyze(): "".split() has 0 words -> ZeroDivisionError."""
+    import fertility_v1 as v1
+
+    p = tmp_path / "pasted.txt"
+    p.write_text(PASTED, encoding="utf-8")
+    lines = v1.read_raw_lines(p)
+    assert lines == ["First line here.", "Second  line."]
+    fixed = v1.replace(v1.V0, split="whitespace")
+    assert v1.analyze(lines, one_token_per_word, fixed)["fertility"] == pytest.approx(1.0)
+
+
+def test_given_pasted_text_when_run_with_v0_then_matches_original_cli(tmp_path):
+    p = tmp_path / "pasted.txt"
+    p.write_text(PASTED, encoding="utf-8")
+    args = ["--corpus", f"eng={TOY / 'eng_sample.txt'}", "--corpus", f"x={p}", "--tokenizer", "gpt2"]
+
+    def run(script, *extra):
+        return subprocess.run([sys.executable, str(script), *args, *extra],
+                              capture_output=True, text=True, encoding="utf-8", check=True).stdout
+
+    assert run(ROOT / "partA" / "fertility_v1.py", "--v0") == run(ROOT / "starter_kit" / "fertility.py")
+
+
 def test_given_v0_flag_when_run_as_cli_then_stdout_matches_original_byte_for_byte():
     args = ["--corpus", f"eng={TOY / 'eng_sample.txt'}", "--corpus", f"hin={TOY / 'hin_sample.txt'}",
             "--tokenizer", "gpt2"]

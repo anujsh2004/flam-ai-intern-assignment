@@ -22,6 +22,18 @@ def test_given_original_module_when_loaded_then_it_is_the_unmodified_file():
     assert callable(mod.analyze) and callable(mod.read_lines)
 
 
+def test_given_modified_original_when_loading_then_guard_refuses(tmp_path, monkeypatch):
+    import pytest
+
+    import audit.v0 as v0
+
+    tampered = tmp_path / "fertility.py"
+    tampered.write_bytes(v0.V0_PATH.read_bytes() + b"\n# edited\n")
+    monkeypatch.setattr(v0, "V0_PATH", tampered)
+    with pytest.raises(RuntimeError, match="was modified"):
+        v0.load_v0()
+
+
 def test_given_toy_corpus_when_v0_analyzes_then_report_numbers_reproduce():
     from audit.v0 import load_v0
 

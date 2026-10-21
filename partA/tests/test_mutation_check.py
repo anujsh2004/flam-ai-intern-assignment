@@ -5,6 +5,18 @@ pytest's output as cp1252 (Windows default) crashed the whole run.
 """
 
 
+def test_given_current_code_then_every_mutant_snippet_occurs_exactly_once():
+    """Fail fast: a stale mutant used to abort a 25-minute run midway (F6 step)."""
+    from audit.mutation_check import MUTANTS, ROOT
+
+    stale = []
+    for name, rel, old, _new in MUTANTS:
+        count = (ROOT / rel).read_text(encoding="utf-8").count(old)
+        if count != 1:
+            stale.append((name, rel, count))
+    assert stale == []
+
+
 def test_given_failing_test_with_devanagari_output_when_run_then_counts_are_parsed(tmp_path, monkeypatch):
     from audit.mutation_check import run_tests
 

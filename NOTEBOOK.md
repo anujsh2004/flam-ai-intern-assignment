@@ -147,3 +147,21 @@ Next: commit this notebook and `state.md` update, merge A1 into `main` after app
 - **Mutation check committed** (`59bdddc`), 19 mutants. One mutant inverted the skip logic and exited **0** with only 19/35 tests passing. A naive checker would have scored it as surviving; counting passes against the baseline caught it. **19/19.**
 - **Corrections to my own wording:** an earlier mutant was named "micro instead of macro", but it only perturbed the result by a factor. It is renamed "aggregation perturbed"; real micro-vs-macro tests come with F2.
 - **D-14 amended:** the "conclusion unchanged" half will be defined later, post-hoc and disclosed as such.
+
+**Step 6, F3 `.lower()`.**
+- Flag added test-first (`b59dd6f`): a fake case-sensitive tokenizer gives `'NASA x'` 1.0 lowercased vs 2.5 served.
+- Tokenizer revisions pinned as `hf:repo@rev` (`4afb3fd`). XLM-R is `FacebookAI/xlm-roberta-base@e73636d4`, ungated, vocab 250,002.
+- I mislabelled my own probe: it printed "lowercases internally? True", but the check was *tokens differ*. XLM-R is in fact **case-sensitive**, so F3 is measurable under it too.
+- No direction was predicted, only "changes the English baseline".
+- Measured (`python partA/audit/experiments.py F3 --tokenizer gpt2`, then `--tokenizer hf:FacebookAI/xlm-roberta-base@e73636d4…`):
+
+  | tokenizer | corpus | eng fertility (v0 -> served) | indic/eng ratio |
+  |---|---|---|---|
+  | gpt2 | toy | **−2.84%** | +2.92% |
+  | gpt2 | FLORES | **−3.45%** (925 lines changed) | **+3.57%** for hin, kan and tam |
+  | XLM-R | toy | −2.80% | +2.88% |
+  | XLM-R | FLORES | −1.72% | +1.71–1.73% |
+
+  Indic own fertility moves only −0.01 to −0.04%, on the 30–56 lines with Latin-script words. Material under D-14 for both tokenizers.
+- **Surprise:** lowercasing *increases* English token counts, so v0 *overstates* English fertility and *understates* the Indic gap. My hypothesis is that both vocabularies were learned from cased text; I have not tested this.
+- Verdict holds: code bug. It measures unserved text, and the bias falls on English only.

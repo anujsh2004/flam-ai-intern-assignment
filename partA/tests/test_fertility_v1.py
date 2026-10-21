@@ -71,7 +71,7 @@ def cfg_for(*argv):
 def test_given_v1_constant_then_it_is_the_single_source_of_corrected_defaults():
     import fertility_v1 as v1
 
-    assert v1.V1 == v1.replace(v1.V0, split="whitespace", lowercase=False)
+    assert v1.V1 == v1.replace(v1.V0, split="whitespace", lowercase=False, aggregate="total")
     assert cfg_for() == v1.V1  # CLI with no fix flags = fully corrected
 
 
@@ -149,6 +149,55 @@ def test_f4_given_cli_nfc_flags_then_config_follows_and_v1_keeps_nfc():
 
     assert v1.V0.nfc is True and v1.V1.nfc is True  # F4 pre-registered as "fine": V1 keeps it
     assert cfg_for("--no-nfc") == v1.replace(v1.V1, nfc=False)
+
+
+def one_token_per_letter(s):
+    """Fake tokenizer: one token per non-space character."""
+    return [c for c in s if not c.isspace()]
+
+
+# Constructed F2 corpus: a short high-ratio line and longer low-ratio lines.
+#   line                    tokens words codepoints  per-line fertility
+#   "abcdef"                   6     1       6          6.0
+#   "a b c d e f g h i j"     10    10      19          1.0
+#   "ab cd ef gh"              8     4      11          2.0
+#   totals                    24    15      36
+F2_CORPUS = ["abcdef", "a b c d e f g h i j", "ab cd ef gh"]
+
+
+def test_f2_given_v0_when_averaging_per_line_then_short_lines_dominate():
+    import fertility_v1 as v1
+
+    r = v1.analyze(F2_CORPUS, one_token_per_letter, v1.V0)
+    assert r["fertility"] == pytest.approx((6 + 1 + 2) / 3)  # 3.0
+    assert r["tok_per_char"] == pytest.approx((6 / 6 + 10 / 19 + 8 / 11) / 3)  # ~0.7512
+
+
+def test_f2_given_totals_when_aggregating_then_ratio_of_sums():
+    import fertility_v1 as v1
+
+    r = v1.analyze(F2_CORPUS, one_token_per_letter, v1.replace(v1.V0, aggregate="total"))
+    assert r["fertility"] == pytest.approx(24 / 15)  # 1.6
+    assert r["tok_per_char"] == pytest.approx(24 / 36)  # 0.6667
+
+
+def test_f2_given_same_text_split_into_more_lines_then_totals_do_not_change_but_average_does():
+    """A cost metric must not depend on where line breaks fall."""
+    import fertility_v1 as v1
+
+    resplit = ["abcdef", "a b c d e f g h i j", "ab cd", "ef gh"]
+    total = v1.replace(v1.V0, aggregate="total")
+    a, b = v1.analyze(F2_CORPUS, one_token_per_letter, total), v1.analyze(resplit, one_token_per_letter, total)
+    assert a["fertility"] == pytest.approx(b["fertility"])
+    m1, m2 = v1.analyze(F2_CORPUS, one_token_per_letter, v1.V0), v1.analyze(resplit, one_token_per_letter, v1.V0)
+    assert m1["fertility"] != pytest.approx(m2["fertility"])  # 3.0 vs (6+1+2+2)/4 = 2.75
+
+
+def test_f2_given_cli_aggregate_flag_then_config_follows_and_v1_uses_totals():
+    import fertility_v1 as v1
+
+    assert v1.V0.aggregate == "line_mean" and v1.V1.aggregate == "total"
+    assert cfg_for("--v0", "--aggregate", "total") == v1.replace(v1.V0, aggregate="total")
 
 
 @pytest.mark.parametrize("spec,expected", [

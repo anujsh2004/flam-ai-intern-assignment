@@ -30,6 +30,7 @@ FINDINGS = {
     "F1": v1.replace(v1.V0, split="whitespace"),
     "F3": v1.replace(v1.V0, lowercase=False),
     "F4": v1.replace(v1.V0, nfc=False),
+    "F2": v1.replace(v1.V0, aggregate="total"),
 }
 
 

@@ -28,11 +28,15 @@ class Config:
     # F4: True = Unicode NFC before tokenizing (v0). Pre-registered as "looks
     #     suspicious but fine" (D-13); V1 keeps it. Effect is tokenizer-dependent.
     nfc: bool = True
+    # F2: "line_mean" = mean of per-line ratios (v0; every line weighs the same,
+    #     so the result depends on where line breaks fall); "total" = sum / sum
+    aggregate: str = "line_mean"
 
 
 V0 = Config()  # original fertility.py behaviour
-V1 = replace(V0, split="whitespace", lowercase=False)  # fully corrected; the single source of CLI defaults
+V1 = replace(V0, split="whitespace", lowercase=False, aggregate="total")  # fully corrected; single source of CLI defaults
 SPLITS = ("space", "whitespace")
+AGGREGATES = ("line_mean", "total")
 
 
 def count_words(line: str, cfg: Config) -> int:
@@ -88,13 +92,19 @@ def measured_text(line: str, cfg: Config) -> str:
 def analyze(lines: list[str], encode, cfg: Config) -> dict:
     per_line_fertility = []
     per_line_tpc = []
+    total_tokens = total_words = total_chars = 0
     for line in lines:
         line = measured_text(line, cfg)
-        tokens = encode(line)
-        per_line_fertility.append(len(tokens) / count_words(line, cfg))
-        per_line_tpc.append(len(tokens) / len(line))
-    n = len(per_line_fertility)
-    return {"fertility": sum(per_line_fertility) / n, "tok_per_char": sum(per_line_tpc) / n}
+        n_tokens, n_words = len(encode(line)), count_words(line, cfg)
+        per_line_fertility.append(n_tokens / n_words)
+        per_line_tpc.append(n_tokens / len(line))
+        total_tokens, total_words, total_chars = total_tokens + n_tokens, total_words + n_words, total_chars + len(line)
+    if cfg.aggregate == "line_mean":
+        n = len(per_line_fertility)
+        return {"fertility": sum(per_line_fertility) / n, "tok_per_char": sum(per_line_tpc) / n}
+    if cfg.aggregate == "total":
+        return {"fertility": total_tokens / total_words, "tok_per_char": total_tokens / total_chars}
+    raise ValueError(f"unknown aggregate mode {cfg.aggregate!r}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -109,10 +119,12 @@ def build_parser() -> argparse.ArgumentParser:
                     help="F3: lowercase before tokenizing (V1: --no-lowercase)")
     ap.add_argument("--nfc", action=argparse.BooleanOptionalAction, default=None,
                     help="F4: Unicode NFC before tokenizing (V1: --nfc)")
+    ap.add_argument("--aggregate", choices=AGGREGATES, default=None,
+                    help="F2: mean of per-line ratios or ratio of totals (V1: total)")
     return ap
 
 
-FIX_FLAGS = ("split", "lowercase", "nfc")
+FIX_FLAGS = ("split", "lowercase", "nfc", "aggregate")
 
 
 def config_from_args(args) -> Config:

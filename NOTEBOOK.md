@@ -107,3 +107,25 @@ Next: commit this notebook and `state.md` update, merge A1 into `main` after app
 - TDD: 11 tests first, all red (no module).
 - `fertility_v1.py` with an empty `Config` (V0 behaviour only): `analyze` returns the *exact* same floats as the original on the toy corpus and all 8 FLORES files. `--v0` CLI stdout is byte-identical to the original. 11 passed; suite 58.
 - Note: the skeleton already omits the unused `import random` / `random.seed(1337)` (F5). The proof that this changes nothing is owed in step 9.
+
+**Step 5, F1 `split(" ")`.**
+- Flag added test-first (`e542deb`): fake tokenizer, `"a  b"` gives 2/3 vs 1.0.
+- Harness added (`22cf99f`): `compare()` reports delta %, changed lines and the D-14 verdict.
+- Prediction (user): code bug with a near-zero blast radius.
+- Measured (`python partA/audit/experiments.py F1 --tokenizer gpt2`):
+
+  | corpus | language | fertility v0 -> fixed | change | lines changed |
+  |---|---|---|---|---|
+  | toy | eng | 1.2652 -> 1.2831 | +1.41% | 1 |
+  | toy | hin | 7.4485 -> 7.5985 | +2.01% | 1 |
+  | FLORES | eng | — | +0.00% | 1 |
+  | FLORES | hin | — | +0.03% | 13 |
+  | FLORES | **kan** | — | **+2.78%** | **507 of 2,009** |
+  | FLORES | tam | — | +0.52% | 158 |
+
+  The toy ratio moves from 5.887 to 5.922. Both corpora are "material" under D-14.
+- **Surprise:** the blast radius is not near zero for Kannada. FLORES Kannada has 1,069 empty "words" from double ASCII spaces (e.g. `'ದೇಶಗಳ  ರೋಗಿಗಳಲ್ಲಿ'`).
+- Confound check: is `split()`'s wider Unicode-whitespace handling responsible for any of the changes? Classified every changed line: 100% contain a double ASCII space, and 0 contain another whitespace character. So the effect is purely double spaces.
+- grep found 519 raw lines with a double space versus 507 changed; the other 12 have the double space only at the line ends, which `strip()` already removes.
+- Verdict unchanged (code bug). The blast-radius expectation is revised and reported to the user.
+- Direction: v0 *under*-states fertility, because the denominator is inflated.

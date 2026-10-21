@@ -1,0 +1,197 @@
+{
+  "finding": "F7",
+  "tokenizer": "gpt2",
+  "variant": {
+    "denominator": "sentence"
+  },
+  "before": {
+    "toy": {
+      "eng": {
+        "fertility": 1.2652056277056276,
+        "tok_per_char": 0.2256359380861302,
+        "fertility_ratio_vs_eng": 1.0,
+        "tok_per_char_ratio_vs_eng": 1.0
+      },
+      "hin": {
+        "fertility": 7.44845238095238,
+        "tok_per_char": 1.5791082199963777,
+        "fertility_ratio_vs_eng": 5.887147684016937,
+        "tok_per_char_ratio_vs_eng": 6.998478315956908
+      }
+    },
+    "flores": {
+      "eng": {
+        "fertility": 1.2849661342978218,
+        "tok_per_char": 0.21460276980214132,
+        "fertility_ratio_vs_eng": 1.0,
+        "tok_per_char_ratio_vs_eng": 1.0
+      },
+      "hin": {
+        "fertility": 7.84430074757875,
+        "tok_per_char": 1.5284519314791691,
+        "fertility_ratio_vs_eng": 6.10467508691606,
+        "tok_per_char_ratio_vs_eng": 7.122237671435302
+      },
+      "kan": {
+        "fertility": 22.360625011442302,
+        "tok_per_char": 2.6576930559360936,
+        "fertility_ratio_vs_eng": 17.401723216356526,
+        "tok_per_char_ratio_vs_eng": 12.38424396100024
+      },
+      "tam": {
+        "fertility": 24.931563932249848,
+        "tok_per_char": 2.720533592747406,
+        "fertility_ratio_vs_eng": 19.402506623938276,
+        "tok_per_char_ratio_vs_eng": 12.677066541385619
+      }
+    }
+  },
+  "after": {
+    "toy": {
+      "eng": {
+        "fertility": 9.9,
+        "tok_per_char": 0.2256359380861302,
+        "fertility_ratio_vs_eng": 1.0,
+        "tok_per_char_ratio_vs_eng": 1.0
+      },
+      "hin": {
+        "fertility": 45.9,
+        "tok_per_char": 1.5791082199963777,
+        "fertility_ratio_vs_eng": 4.636363636363636,
+        "tok_per_char_ratio_vs_eng": 6.998478315956908
+      }
+    },
+    "flores": {
+      "eng": {
+        "fertility": 27.2224987555998,
+        "tok_per_char": 0.21460276980214132,
+        "fertility_ratio_vs_eng": 1.0,
+        "tok_per_char_ratio_vs_eng": 1.0
+      },
+      "hin": {
+        "fertility": 195.38974614235937,
+        "tok_per_char": 1.5284519314791691,
+        "fertility_ratio_vs_eng": 7.177509599561162,
+        "tok_per_char_ratio_vs_eng": 7.122237671435302
+      },
+      "kan": {
+        "fertility": 356.98855151816826,
+        "tok_per_char": 2.6576930559360936,
+        "fertility_ratio_vs_eng": 13.113731943682575,
+        "tok_per_char_ratio_vs_eng": 12.38424396100024
+      },
+      "tam": {
+        "fertility": 406.86062717770034,
+        "tok_per_char": 2.720533592747406,
+        "fertility_ratio_vs_eng": 14.945748765770707,
+        "tok_per_char_ratio_vs_eng": 12.677066541385619
+      }
+    }
+  },
+  "delta_pct": {
+    "toy": {
+      "eng": {
+        "fertility": 682.481502074334,
+        "tok_per_char": 0.0,
+        "fertility_ratio_vs_eng": 0.0,
+        "tok_per_char_ratio_vs_eng": 0.0
+      },
+      "hin": {
+        "fertility": 516.235395655857,
+        "tok_per_char": 0.0,
+        "fertility_ratio_vs_eng": -21.246011053010687,
+        "tok_per_char_ratio_vs_eng": 0.0
+      }
+    },
+    "flores": {
+      "eng": {
+        "fertility": 2018.5382267273305,
+        "tok_per_char": 0.0,
+        "fertility_ratio_vs_eng": 0.0,
+        "tok_per_char_ratio_vs_eng": 0.0
+      },
+      "hin": {
+        "fertility": 2390.849757419985,
+        "tok_per_char": 0.0,
+        "fertility_ratio_vs_eng": 17.57398219185278,
+        "tok_per_char_ratio_vs_eng": 0.0
+      },
+      "kan": {
+        "fertility": 1496.5052467696735,
+        "tok_per_char": 0.0,
+        "fertility_ratio_vs_eng": -24.641187653436003,
+        "tok_per_char_ratio_vs_eng": 0.0
+      },
+      "tam": {
+        "fertility": 1531.9097682091733,
+        "tok_per_char": 0.0,
+        "fertility_ratio_vs_eng": -22.97001075453284,
+        "tok_per_char_ratio_vs_eng": 0.0
+      }
+    }
+  },
+  "lines_changed": {
+    "toy": {
+      "eng": {
+        "tokens": 0,
+        "words": 0,
+        "any_metric": 10
+      },
+      "hin": {
+        "tokens": 0,
+        "words": 0,
+        "any_metric": 10
+      }
+    },
+    "flores": {
+      "eng": {
+        "tokens": 0,
+        "words": 0,
+        "any_metric": 2009
+      },
+      "hin": {
+        "tokens": 0,
+        "words": 0,
+        "any_metric": 2009
+      },
+      "kan": {
+        "tokens": 0,
+        "words": 0,
+        "any_metric": 2009
+      },
+      "tam": {
+        "tokens": 0,
+        "words": 0,
+        "any_metric": 2009
+      }
+    }
+  },
+  "threshold_verdict": {
+    "toy": {
+      "overall": "material",
+      "by_language": {
+        "eng": "material",
+        "hin": "material"
+      },
+      "by_language_own_metrics": {
+        "eng": "material",
+        "hin": "material"
+      }
+    },
+    "flores": {
+      "overall": "material",
+      "by_language": {
+        "eng": "material",
+        "hin": "material",
+        "kan": "material",
+        "tam": "material"
+      },
+      "by_language_own_metrics": {
+        "eng": "material",
+        "hin": "material",
+        "kan": "material",
+        "tam": "material"
+      }
+    }
+  }
+}

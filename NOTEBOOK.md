@@ -233,3 +233,40 @@ Next: commit this notebook and `state.md` update, merge A1 into `main` after app
 - **Process slip.** The F6 mutation run aborted after 25/25 kills. I had changed `lines_changed` to use `count_tokens()` but not the mutant that targets that line, so the checker refused a snippet found 0 times. The run was incomplete, not a pass.
   - Fix: retargeted the mutant and re-ran the full check.
   - Prevention: a fast test in the normal suite asserts that every mutant snippet occurs exactly once. Run against a copy with the stale snippet restored, it fails in 0.07 s and names the mutant.
+
+**Llama access granted** (user).
+- `meta-llama/Llama-3.2-3B@13afe512…` downloaded. The official `config.json` matches FLM-4B on all 5 architecture numbers; vocab 128,256; tied embeddings.
+- `tokenizer.json` SHA-256 `79e3e522…b2b4`. It loads through `fertility_v1` unchanged; 1 special token (BOS).
+- With the official file available, the plan to hash-check the ungated mirror against it was dropped. F9 is unblocked.
+
+**Step 11, F7 + F8** (conceptual, D-13). Two new fields:
+- `denominator`: words (v0) / codepoints / graphemes / bytes / sentence;
+- `char_unit`: codepoints (v0) / graphemes / bytes.
+
+They reuse A1's tested `units.py`, so nothing is reimplemented. Built test-first, with hand-worked values (e.g. `नमस्ते` = 6 code points / 3 graphemes / 18 bytes, giving tok/char 1.0 / 2.0 / 1/3). CLI labels follow the unit, and v0 wording stays byte-identical.
+- **Safeguard worked:** after the V1 line changed, the stale-mutant test caught 2 outdated mutants in 0.07 s instead of 25 minutes into a run.
+- **Own slip:** my scripted edit of the mutant list turned an escaped `\n` into a real newline, which broke the file's syntax. The test caught it at once, and I fixed it by hand.
+- **F7 measured.** The absolute deltas are meaningless here because the unit changes; only the ratios vs eng matter.
+
+  | FLORES | per word -> per parallel sentence |
+  |---|---|
+  | gpt2 hin | 6.10 -> **7.18** (+17.6%) |
+  | gpt2 kan | 17.40 -> **13.11** (−24.6%) |
+  | gpt2 tam | 19.40 -> **14.95** (−23.0%) |
+  | XLM-R hin | 1.05 -> 1.23 (+17.2%) |
+  | XLM-R kan | 1.77 -> 1.34 (−24.6%) |
+  | XLM-R tam | 1.72 -> 1.33 (−22.9%) |
+
+  The direction matches A1's words-per-content ratios (hin 1.17, kan 0.74, tam 0.77). Per-word ratios **understate** Hindi's cost and **overstate** Kannada's and Tamil's.
+  - The distortion is almost identical under both tokenizers, as expected: it comes from the denominator, not the tokenizer.
+  - So the report's "5.89×" is not a cost ratio. **Conceptual flaw confirmed.**
+- **F8 measured** (same tokens, tok/char unit changed):
+
+  | FLORES | per code point / per grapheme / per byte |
+  |---|---|
+  | gpt2 hin | 7.12 / **10.89** / **2.77** |
+  | XLM-R hin | 1.23 / 1.88 / **0.48** |
+  | XLM-R tam | 1.13 / 1.75 / 0.42 |
+
+  The direction can even flip: per byte, XLM-R makes Hindi look cheaper than English. Our reproduction of the report's "two metrics agree" is 5.887 vs 6.998. They share a numerator and differ only through characters-per-word, so they are not independent confirmation. **Conceptual flaw confirmed.**
+- **Decision recorded for user review:** V1's denominator is set to `sentence` as the provisional F7 fix. Whether tokens per parallel sentence is *the* single routing/cost number is still A3's question (D-06).

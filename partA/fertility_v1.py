@@ -47,16 +47,19 @@ def load_tokenizer(spec: str):
     return tiktoken.get_encoding(spec).encode
 
 
-def read_lines(path: Path, cfg: Config) -> list[str]:
-    lines = []
+def read_raw_lines(path: Path) -> list[str]:
+    """Stripped, non-empty lines exactly as v0 reads them, before any normalisation."""
     with open(path, "r", encoding="utf-8") as f:
-        for raw in f:
-            line = raw.strip()
-            if not line:
-                continue
-            line = unicodedata.normalize("NFC", line)
-            lines.append(line)
-    return lines
+        return [line for line in (raw.strip() for raw in f) if line]
+
+
+def prepare(lines: list[str], cfg: Config) -> list[str]:
+    """Config-dependent text preparation applied before tokenizing."""
+    return [unicodedata.normalize("NFC", line) for line in lines]
+
+
+def read_lines(path: Path, cfg: Config) -> list[str]:
+    return prepare(read_raw_lines(path), cfg)
 
 
 def analyze(lines: list[str], encode, cfg: Config) -> dict:

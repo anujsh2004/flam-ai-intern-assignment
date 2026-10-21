@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+"""Measure one audited fix in isolation: v0 vs (v0 + that fix).
+
+    python partA/audit/experiments.py F1 [--tokenizer gpt2]
+
+Writes partA/audit/results/<finding>_<tokenizer>.json. Effect size and the
+negligible/material line follow D-14 (|delta| < 1% on every reported metric).
+"""
+import argparse
+import json
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
+
+import fertility_v1 as v1  # noqa: E402
+
+ROOT = HERE.parents[1]
+TOY = ROOT / "starter_kit" / "corpus_sample"
+FLORES = ROOT / "partA" / "corpus" / "prepared"
+FLORES_LANGS = {"eng": "eng_Latn", "hin": "hin_Deva", "kan": "kan_Knda", "tam": "tam_Taml"}
+THRESHOLD_PCT = 1.0  # D-14, pre-registered
+
+# finding -> config that differs from v0 in exactly that one fix
+FINDINGS = {
+    "F1": v1.replace(v1.V0, split="whitespace"),
+}
+
+
+def load_corpora() -> dict:
+    toy = {lang: v1.read_raw_lines(TOY / f"{lang}_sample.txt") for lang in ("eng", "hin")}
+    flores = {
+        lang: v1.read_raw_lines(FLORES / f"{code}.dev.txt") + v1.read_raw_lines(FLORES / f"{code}.devtest.txt")
+        for lang, code in FLORES_LANGS.items()
+    }
+    return {"toy": toy, "flores": flores}
+
+
+def measure(cfg, encode, corpora) -> dict:
+    out = {}
+    for corpus, langs in corpora.items():
+        res = {lang: v1.analyze(v1.prepare(lines, cfg), encode, cfg) for lang, lines in langs.items()}
+        for r in res.values():
+            r["fertility_ratio_vs_eng"] = r["fertility"] / res["eng"]["fertility"]
+            r["tok_per_char_ratio_vs_eng"] = r["tok_per_char"] / res["eng"]["tok_per_char"]
+        out[corpus] = res
+    return out
+
+
+def lines_changed(before_cfg, after_cfg, encode, lines) -> int:
+    """Lines whose own per-line result differs between the two configs."""
+    a = v1.prepare(lines, before_cfg)
+    b = v1.prepare(lines, after_cfg)
+    return sum(v1.analyze([x], encode, before_cfg) != v1.analyze([y], encode, after_cfg) for x, y in zip(a, b))
+
+
+def threshold_verdict(deltas: dict) -> str:
+    return "negligible" if all(abs(d) < THRESHOLD_PCT for d in deltas.values()) else "material"
+
+
+def compare(before_cfg, after_cfg, encode, corpora) -> dict:
+    before = measure(before_cfg, encode, corpora)
+    after = measure(after_cfg, encode, corpora)
+    delta = {
+        corpus: {
+            lang: {k: (after[corpus][lang][k] - v) / v * 100 for k, v in metrics.items()}
+            for lang, metrics in langs.items()
+        }
+        for corpus, langs in before.items()
+    }
+    changed = {
+        corpus: {lang: lines_changed(before_cfg, after_cfg, encode, lines) for lang, lines in langs.items()}
+        for corpus, langs in corpora.items()
+    }
+    verdict = {
+        corpus: threshold_verdict({f"{lang}.{k}": d for lang, m in langs.items() for k, d in m.items()})
+        for corpus, langs in delta.items()
+    }
+    return {"before": before, "after": after, "delta_pct": delta, "lines_changed": changed, "threshold_verdict": verdict}
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("finding", choices=sorted(FINDINGS))
+    ap.add_argument("--tokenizer", default="gpt2")
+    args = ap.parse_args()
+
+    res = compare(v1.V0, FINDINGS[args.finding], v1.load_tokenizer(args.tokenizer), load_corpora())
+    res = {"finding": args.finding, "tokenizer": args.tokenizer, "variant": repr(FINDINGS[args.finding]), **res}
+    out = HERE / "results" / f"{args.finding}_{args.tokenizer.replace('/', '_').replace(':', '_')}.json"
+    out.parent.mkdir(exist_ok=True)
+    out.write_text(json.dumps(res, indent=2) + "\n", encoding="utf-8", newline="\n")
+
+    print(f"{args.finding} ({args.tokenizer}): {res['variant']}  -> {out.relative_to(ROOT)}")
+    for corpus, langs in res["delta_pct"].items():
+        print(f"[{corpus}] verdict: {res['threshold_verdict'][corpus]}")
+        for lang, m in langs.items():
+            b, a = res["before"][corpus][lang], res["after"][corpus][lang]
+            print(f"  {lang}: fertility {b['fertility']:.4f} -> {a['fertility']:.4f} ({m['fertility']:+.2f}%), "
+                  f"ratio {b['fertility_ratio_vs_eng']:.4f} -> {a['fertility_ratio_vs_eng']:.4f} "
+                  f"({m['fertility_ratio_vs_eng']:+.2f}%), lines changed {res['lines_changed'][corpus][lang]}")
+
+
+if __name__ == "__main__":
+    main()

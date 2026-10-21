@@ -31,6 +31,7 @@ FINDINGS = {
     "F3": v1.replace(v1.V0, lowercase=False),
     "F4": v1.replace(v1.V0, nfc=False),
     "F2": v1.replace(v1.V0, aggregate="total"),
+    "F6": v1.replace(v1.V0, special_tokens=True),
 }
 
 
@@ -60,7 +61,7 @@ def lines_changed(before_cfg, after_cfg, encode, lines) -> dict:
     out = {"tokens": 0, "words": 0, "any_metric": 0}
     for x, y in zip(v1.prepare(lines, before_cfg), v1.prepare(lines, after_cfg)):
         mx, my = v1.measured_text(x, before_cfg), v1.measured_text(y, after_cfg)
-        out["tokens"] += len(encode(mx)) != len(encode(my))
+        out["tokens"] += v1.count_tokens(mx, encode, before_cfg) != v1.count_tokens(my, encode, after_cfg)
         out["words"] += v1.count_words(mx, before_cfg) != v1.count_words(my, after_cfg)
         out["any_metric"] += v1.analyze([x], encode, before_cfg) != v1.analyze([y], encode, after_cfg)
     return out

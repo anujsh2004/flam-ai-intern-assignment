@@ -200,6 +200,61 @@ def test_f2_given_cli_aggregate_flag_then_config_follows_and_v1_uses_totals():
     assert cfg_for("--v0", "--aggregate", "total") == v1.replace(v1.V0, aggregate="total")
 
 
+def with_specials(n):
+    """Fake tokenizer that, like XLM-R, would add n special tokens per encoded sequence."""
+    def encode(s):
+        return s.split()
+    encode.num_special_tokens = n
+    return encode
+
+
+def test_f6_given_v0_when_tokenizer_has_specials_then_they_are_not_counted():
+    import fertility_v1 as v1
+
+    # "a b" = 2 tokens / 2 words; v0 passes add_special_tokens=False
+    assert v1.analyze(["a b"], with_specials(2), v1.V0)["fertility"] == pytest.approx(1.0)
+
+
+def test_f6_given_special_tokens_on_when_analyzing_then_each_line_gains_them():
+    import fertility_v1 as v1
+
+    cfg = v1.replace(v1.V0, special_tokens=True)
+    # line_mean: ("a b": (2+2)/2 = 2.0, "a b c d": (4+2)/4 = 1.5) -> 1.75
+    assert v1.analyze(["a b", "a b c d"], with_specials(2), cfg)["fertility"] == pytest.approx(1.75)
+    # a tokenizer without specials (e.g. tiktoken) is unaffected
+    assert v1.analyze(["a b"], one_token_per_word, cfg)["fertility"] == pytest.approx(1.0)
+
+
+def test_f6_given_cli_flag_then_config_follows_and_both_v0_and_v1_exclude_specials():
+    import fertility_v1 as v1
+
+    assert v1.V0.special_tokens is False and v1.V1.special_tokens is False
+    assert cfg_for("--v0", "--special-tokens") == v1.replace(v1.V0, special_tokens=True)
+
+
+@pytest.mark.flores
+def test_f6_given_xlmr_when_specials_modelled_as_count_then_matches_real_add_special_tokens():
+    """The count model must equal the tokenizer's own add_special_tokens=True output."""
+    from transformers import AutoTokenizer
+
+    import fertility_v1 as v1
+    from audit.experiments import XLMR
+
+    kind, name, rev = v1.parse_tokenizer_spec(XLMR)
+    tok = AutoTokenizer.from_pretrained(name, revision=rev)
+    encode = v1.load_tokenizer(XLMR)
+    lines = v1.read_raw_lines(FLORES / "kan_Knda.dev.txt")[:200] + v1.read_raw_lines(FLORES / "eng_Latn.dev.txt")[:200]
+    for line in lines:
+        assert len(tok.encode(line, add_special_tokens=True)) == len(encode(line)) + encode.num_special_tokens
+
+
+@pytest.mark.gpt2
+def test_f6_given_tiktoken_then_no_special_tokens_are_reported():
+    import fertility_v1 as v1
+
+    assert v1.load_tokenizer("gpt2").num_special_tokens == 0
+
+
 @pytest.mark.parametrize("spec,expected", [
     ("gpt2", ("tiktoken", "gpt2", None)),
     ("hf:xlm-roberta-base", ("hf", "xlm-roberta-base", None)),

@@ -31,6 +31,9 @@ class Config:
     # F2: "line_mean" = mean of per-line ratios (v0; every line weighs the same,
     #     so the result depends on where line breaks fall); "total" = sum / sum
     aggregate: str = "line_mean"
+    # F6: False = exclude tokenizer-added special tokens (v0: add_special_tokens=False).
+    #     True counts them (e.g. XLM-R <s> </s>) on every line.
+    special_tokens: bool = False
 
 
 V0 = Config()  # original fertility.py behaviour
@@ -56,15 +59,28 @@ def parse_tokenizer_spec(spec: str) -> tuple[str, str, str | None]:
 
 
 def load_tokenizer(spec: str):
+    """Return encode(s) -> token ids (never including special tokens), with
+    encode.num_special_tokens = how many the tokenizer would add per sequence (F6)."""
     kind, name, revision = parse_tokenizer_spec(spec)
     if kind == "hf":
         from transformers import AutoTokenizer
 
         tok = AutoTokenizer.from_pretrained(name, revision=revision)
-        return lambda s: tok.encode(s, add_special_tokens=False)
+
+        def encode(s):
+            return tok.encode(s, add_special_tokens=False)
+
+        encode.num_special_tokens = tok.num_special_tokens_to_add(pair=False)
+        return encode
     import tiktoken
 
-    return tiktoken.get_encoding(name).encode
+    enc = tiktoken.get_encoding(name)
+
+    def encode(s):
+        return enc.encode(s)
+
+    encode.num_special_tokens = 0  # tiktoken's encode never adds special tokens
+    return encode
 
 
 def read_raw_lines(path: Path) -> list[str]:
@@ -89,13 +105,18 @@ def measured_text(line: str, cfg: Config) -> str:
     return line.lower() if cfg.lowercase else line
 
 
+def count_tokens(text: str, encode, cfg: Config) -> int:
+    specials = getattr(encode, "num_special_tokens", 0) if cfg.special_tokens else 0
+    return len(encode(text)) + specials
+
+
 def analyze(lines: list[str], encode, cfg: Config) -> dict:
     per_line_fertility = []
     per_line_tpc = []
     total_tokens = total_words = total_chars = 0
     for line in lines:
         line = measured_text(line, cfg)
-        n_tokens, n_words = len(encode(line)), count_words(line, cfg)
+        n_tokens, n_words = count_tokens(line, encode, cfg), count_words(line, cfg)
         per_line_fertility.append(n_tokens / n_words)
         per_line_tpc.append(n_tokens / len(line))
         total_tokens, total_words, total_chars = total_tokens + n_tokens, total_words + n_words, total_chars + len(line)
@@ -121,10 +142,12 @@ def build_parser() -> argparse.ArgumentParser:
                     help="F4: Unicode NFC before tokenizing (V1: --nfc)")
     ap.add_argument("--aggregate", choices=AGGREGATES, default=None,
                     help="F2: mean of per-line ratios or ratio of totals (V1: total)")
+    ap.add_argument("--special-tokens", dest="special_tokens", action=argparse.BooleanOptionalAction, default=None,
+                    help="F6: count tokenizer-added special tokens (V1: --no-special-tokens)")
     return ap
 
 
-FIX_FLAGS = ("split", "lowercase", "nfc", "aggregate")
+FIX_FLAGS = ("split", "lowercase", "nfc", "aggregate", "special_tokens")
 
 
 def config_from_args(args) -> Config:

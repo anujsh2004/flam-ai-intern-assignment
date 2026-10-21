@@ -86,3 +86,19 @@ Format: hypothesis -> experiment -> result -> revision. Dead ends are kept.
 - `31f0e44`, `edd8a50`, `4bedafe` on `part-a-corpus`
 
 Next: commit this notebook and `state.md` update, merge A1 into `main` after approval, then A2.
+
+## 2026-10-21 — A2: auditing `fertility.py`
+
+**Pre-registration first** (`fadbc4d`). The verdicts F1–F9, the <1% negligible threshold and the reporting order were committed before any A2 number existed (D-13, D-14), so the results can't move the goalposts.
+
+**FLM-4B tokenizer proxy.**
+- Hypothesis: the spec's architecture numbers correspond to a real open model.
+- Result: Llama-3.2-3B's config matches on every architecture number (28 layers / 3072 / 24 Q / 8 KV / 128 head_dim / 128,256 vocab), but not on parameter count (≈3.2B vs 4.2B). So it's a proxy, not ground truth.
+- The official repo is gated: download said "requires approval". Waiting on the user.
+
+**Step 3, reproduce v0.**
+- Hypothesis: the report's numbers might not come from this script.
+- TDD: wrote 3 tests first. 2 were red (no loader module). The third, which runs the unmodified CLI, was already green: it prints "hin is 5.89x".
+- Added `audit/v0.py`, which loads `starter_kit/fertility.py` only if its SHA-256 matches the provided file (`93528e33…`). Result: 3 passed.
+- Unrounded: eng 1.2652 / 0.2256, hin 7.4485 / 1.5791, ratio 5.887.
+- Conclusion: the report faithfully prints what the code computes. A2 is therefore about whether the code and the metric are right, not about transcription errors.

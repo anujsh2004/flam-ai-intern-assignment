@@ -71,7 +71,7 @@ def cfg_for(*argv):
 def test_given_v1_constant_then_it_is_the_single_source_of_corrected_defaults():
     import fertility_v1 as v1
 
-    assert v1.V1 == v1.replace(v1.V0, split="whitespace")
+    assert v1.V1 == v1.replace(v1.V0, split="whitespace", lowercase=False)
     assert cfg_for() == v1.V1  # CLI with no fix flags = fully corrected
 
 
@@ -88,6 +88,37 @@ def test_f1_given_cli_split_flag_then_config_uses_it():
 
     assert v1.config_from_args(v1.build_parser().parse_args(["--corpus", "x=y", "--split", "whitespace"])).split == "whitespace"
     assert v1.config_from_args(v1.build_parser().parse_args(["--corpus", "x=y", "--v0"])) == v1.V0
+
+
+def case_sensitive_tokens(s):
+    """Fake tokenizer: each uppercase letter is its own token, each lowercase run one token."""
+    import re
+
+    return re.findall(r"[A-Z]|[a-z]+|\S", s)
+
+
+def test_f3_given_v0_when_text_has_capitals_then_it_measures_lowercased_text():
+    import fertility_v1 as v1
+
+    # v0 lowercases first: "nasa x" -> ["nasa", "x"] = 2 tokens / 2 words
+    assert v1.analyze(["NASA x"], case_sensitive_tokens, v1.V0)["fertility"] == pytest.approx(1.0)
+
+
+def test_f3_given_no_lowercase_when_text_has_capitals_then_served_text_is_measured():
+    import fertility_v1 as v1
+
+    # served text "NASA x" -> N, A, S, A, x = 5 tokens / 2 words
+    cfg = v1.replace(v1.V0, lowercase=False)
+    assert v1.analyze(["NASA x"], case_sensitive_tokens, cfg)["fertility"] == pytest.approx(2.5)
+    assert v1.analyze(["NASA x"], case_sensitive_tokens, cfg)["tok_per_char"] == pytest.approx(5 / 6)
+
+
+def test_f3_given_cli_lowercase_flags_then_config_follows():
+    import fertility_v1 as v1
+
+    assert v1.V1.lowercase is False and v1.V0.lowercase is True
+    assert cfg_for("--v0", "--no-lowercase") == v1.replace(v1.V0, lowercase=False)
+    assert cfg_for("--lowercase") == v1.replace(v1.V1, lowercase=True)
 
 
 PASTED = "First line here.\n\n   \n\tSecond  line.\n\n"  # blank, whitespace-only, tab, double space

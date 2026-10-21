@@ -22,10 +22,13 @@ class Config:
     # F1: "space" = line.split(" ") (v0; double spaces create empty words),
     #     "whitespace" = line.split() (only real words)
     split: str = "space"
+    # F3: True = lowercase before tokenizing (v0). Served text is not lowercased,
+    #     so this measures text the model never sees and changes eng but not Indic.
+    lowercase: bool = True
 
 
 V0 = Config()  # original fertility.py behaviour
-V1 = replace(V0, split="whitespace")  # fully corrected; the single source of CLI defaults
+V1 = replace(V0, split="whitespace", lowercase=False)  # fully corrected; the single source of CLI defaults
 SPLITS = ("space", "whitespace")
 
 
@@ -67,7 +70,8 @@ def analyze(lines: list[str], encode, cfg: Config) -> dict:
     per_line_fertility = []
     per_line_tpc = []
     for line in lines:
-        line = line.lower()
+        if cfg.lowercase:
+            line = line.lower()
         tokens = encode(line)
         per_line_fertility.append(len(tokens) / count_words(line, cfg))
         per_line_tpc.append(len(tokens) / len(line))
@@ -83,12 +87,17 @@ def build_parser() -> argparse.ArgumentParser:
                     help="start from the original behaviour (default start: corrected V1); fix flags then override")
     # fix flags default to None = "keep the base value", so --v0 plus a flag isolates one fix
     ap.add_argument("--split", choices=SPLITS, default=None, help="F1: word splitting (V1: whitespace)")
+    ap.add_argument("--lowercase", action=argparse.BooleanOptionalAction, default=None,
+                    help="F3: lowercase before tokenizing (V1: --no-lowercase)")
     return ap
+
+
+FIX_FLAGS = ("split", "lowercase")
 
 
 def config_from_args(args) -> Config:
     base = V0 if args.v0 else V1
-    overrides = {name: getattr(args, name) for name in ("split",) if getattr(args, name) is not None}
+    overrides = {name: getattr(args, name) for name in FIX_FLAGS if getattr(args, name) is not None}
     return replace(base, **overrides)
 
 

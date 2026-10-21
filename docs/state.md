@@ -1,9 +1,9 @@
 # Project state
 
-_Last updated: 2026-10-21 (A1 committed locally on `part-a-corpus`; merge into `main` awaiting approval)_
+_Last updated: 2026-10-21 (A1 merged into `main`; A2 started on `part-a-audit`)_
 
 ## Current phase / task
-Phase 1 — A1 corpus: **done and committed locally** on `part-a-corpus`. Next: merge it into `main` (`--no-ff`, after approval), then Phase 2 (A2) on `part-a-audit`. Order: A1 -> A2 -> A3 -> A4 -> B -> C (D-10).
+Phase 2 — A2 audit of `fertility.py`, on branch `part-a-audit` (created from `main` at `48f28fe`). The A2 plan, pre-registered verdicts and threshold are recorded next in `docs/plan.md` and `docs/decision.md`. Order: A1 -> A2 -> A3 -> A4 -> B -> C (D-10).
 
 ## Completed
 - **Phase 0 foundation.** Git history was reset at the user's request on 2026-10-21 and restarted the same day.
@@ -21,13 +21,14 @@ Phase 1 — A1 corpus: **done and committed locally** on `part-a-corpus`. Next: 
 | `31f0e44` | `part-a-corpus` | partA: A1 evaluation corpus (FLORES-200) with tests | 10-21 00:26 | 10-21 12:13 |
 | `edd8a50` | `part-a-corpus` | partA: write generated JSON with LF on every platform | 10-21 12:16 | 10-21 12:18 |
 | `4bedafe` | `part-a-corpus` | docs: A1 notebook, decisions, plan and state | 10-21 12:19 | 10-21 12:20 |
+| `9192110` | `part-a-corpus` | docs: record commits and line-ending findings in state and notebook | 10-21 12:22 | 10-21 12:23 |
+| `48f28fe` | `main` | Merge branch 'part-a-corpus': A1 evaluation corpus (`--no-ff`; 44 passed on `main` after merge) | 10-21 12:28 | 10-21 12:28 |
 
-- **Branch tips:** `main` = `bd21ead`; `part-a-corpus` = `4bedafe`. Merge not done.
+- **Branch tips:** `main` = `48f28fe`; `part-a-corpus` = `9192110` (merged, kept); `part-a-audit` created from `48f28fe` (contains all of A1; verified with `git merge-base --is-ancestor`; 44 passed).
 - **Dates:** author dates = newest file time in each commit (user's choice); commit dates = real commit times.
-- **Authorship:** all four commits are authored by `anujsh2004` only. 0 matches for co-author or tool attribution in any message.
-- **Working tree:** clean, except this file and `NOTEBOOK.md`, which were rewritten after `4bedafe` and are **not yet committed**.
+- **Authorship:** every commit is authored by `anujsh2004` only. 0 matches for co-author or tool attribution in any message.
 
-## What is (and isn't) in git
+## What is (and isn't) in git (as of the A1 merge)
 - **`main`:** `.gitignore`, `.gitattributes`, pinned `requirements.txt`, `README.md`, `.gitkeep` files, `starter_kit/**` (byte-identical to the provided kit, checked with `cmp`), `.claude/skills/{flam-audit,commit}`.
 - **`part-a-corpus` adds:**
   - `partA/units.py`
@@ -65,11 +66,17 @@ Phase 1 — A1 corpus: **done and committed locally** on `part-a-corpus`. Next: 
 - **Accounts:** `gh` logged in as anujsh2004. The user has a Hugging Face account, not yet configured here.
 
 ## Blockers / open issues
-- Merge approval for `part-a-corpus` -> `main`.
+- **Llama-3.2-3B tokenizer (F9 proxy, D-04):** HF access is pending user approval at the gated repo. `hf auth whoami` = anujsh2004; download returned "requires approval".
 - D-01 layout still awaiting an explicit ack.
 - `AI_USAGE.md` (required deliverable) absent by user decision.
 
 ## Next steps
-1. Commit this `state.md` and the `NOTEBOOK.md` update (needs approval).
-2. Merge `part-a-corpus` -> `main` (`--no-ff`) after approval.
-3. Phase 2 (A2): isolated experiments on `fertility.py` on branch `part-a-audit`. Note for A2/B: `bench_log.csv` is CRLF, and `fertility.py` reads text with `strip()`.
+A2 to-do, TDD, one granular commit each (full list in `docs/plan.md` Phase 2):
+1. Reproduce v0.
+2. v1 skeleton with `--v0`.
+3. Flags and measurements: F1 split, F3 lowercase, F4 NFC, F2 aggregate, F5 seed, F6 special tokens, F7/F8 denominators, F9 proxy tokenizer.
+4. Leave-one-out ablation, then cumulative results.
+5. Write `partA/A2_audit.md` and `partA/A2_results.md`.
+6. Update docs.
+
+Note: `bench_log.csv` is CRLF, and `fertility.py` reads text with `strip()`.

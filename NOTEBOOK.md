@@ -182,3 +182,30 @@ Next: commit this notebook and `state.md` update, merge A1 into `main` after app
 - **Kannada differs:** NFC *composes* a vowel sign plus a length mark (U+0CD5/U+0CD6) and changes tokens in 17 lines under both tokenizers.
 - Verdict confirmed with evidence: **looks suspicious but fine**. The mechanism depends on the tokenizer and script; the effect is ≤0.11% everywhere.
 - **Cost noted:** the staleness test now recomputes 5 result files, so the suite takes ~64 s and the mutation run ~20 min.
+- The user accepted the cost: accuracy over speed, and every run is a full run (no targeted or skipped suites).
+
+**Step 8, F2 aggregation** (method/decision flaw, D-13). User decision: totals (sum/sum) are the right aggregate.
+- **Constructed corpus**, worked out by hand with a fake one-token-per-letter tokenizer:
+  - lines `abcdef` (6 tokens / 1 word), `a b c d e f g h i j` (10/10) and `ab cd ef gh` (8/4);
+  - per-line average fertility = 3.0, totals = 24/15 = 1.6;
+  - tok/char: per-line average ≈ 0.7512, totals = 24/36.
+- **Property test:** splitting `ab cd ef gh` into two lines leaves the totals unchanged but moves the per-line average from 3.0 to 2.75. A cost metric must not depend on where the line breaks fall.
+- The v0 path still reproduces the original to the last digit (same additions, same order). Suite: 94 passed.
+- **Measured:**
+  - gpt2 FLORES: kan **−1.61%**, tam −0.98%, eng −0.69%, hin −0.45%;
+  - XLM-R FLORES: kan **−1.70%**, tam **−1.06%**, hin −0.89%, eng −0.80%;
+  - XLM-R toy: eng −1.34%.
+- **Direction:** the per-line average *overstates* fertility in 11/12 cells. The exception is XLM-R toy hin (+0.30%). Short lines carry high ratios and get equal weight.
+- **Ratios vs English move less**, all under 1% on FLORES, because the bias partly cancels across languages. So F2 mainly distorts *absolute* fertility, most of all for the Dravidian languages.
+- "Lines changed" is 0 everywhere, and that is correct: F2 changes how lines combine, not any line's own value.
+- Material under D-14 (several cells ≥1%).
+
+**Mutation-checker bug (my tool, not the code under test).**
+- **What happened:** the F2 mutation run crashed after 11/11 kills. The "F2 branch inverted" mutant made pytest print Devanagari, and the checker decoded the child's output as cp1252, the Windows default. Result: `UnicodeDecodeError` -> stdout `None` -> `TypeError`. The run was *incomplete*, not a pass.
+- **Reproducing it test-first took three tries:**
+  - Try 1 was red only because `run_tests` had no test-list parameter: the wrong reason.
+  - Try 2 passed, because the original run had `PYTHONIOENCODING=utf-8`, so the child wrote UTF-8. Recreated with `monkeypatch.setenv`.
+  - It still passed. cp1252 can decode most bytes, failing only on 0x81/0x8D/0x8F/0x90/0x9D, and the UTF-8 bytes of `ज़` contain none of those. The real crash was byte 0x81, as in U+0941 (`E0 A5 81`).
+  - Try 3, using U+0941, was **red with the exact original error**.
+- **Fix:** the child is forced to `PYTHONIOENCODING=utf-8` and the parent decodes UTF-8 with `errors="replace"`. The regression test is green under both `PYTHONIOENCODING=utf-8` and `cp1252`.
+- **Lesson:** a repro that passes for the wrong reason is not a repro. Check the byte-level mechanism.

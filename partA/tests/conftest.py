@@ -6,14 +6,15 @@ import pytest
 # make partA/ importable as a flat package root (units.py, corpus/...)
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from testsupport import missing_flores, missing_gpt2  # noqa: E402
+from testsupport import missing_flores, missing_gpt2, missing_llama  # noqa: E402
 
-CHECKS = {"flores": missing_flores, "gpt2": missing_gpt2}
+CHECKS = {"flores": missing_flores, "gpt2": missing_gpt2, "llama": missing_llama}
 
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "flores: needs FLORES text from partA/corpus/prep.py")
     config.addinivalue_line("markers", "gpt2: needs the tiktoken gpt2 encoding (network on first use)")
+    config.addinivalue_line("markers", "llama: needs gated meta-llama/Llama-3.2-3B tokenizer access")
 
 
 def pytest_runtest_setup(item):

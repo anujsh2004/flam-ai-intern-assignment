@@ -18,6 +18,21 @@ def missing_flores(prepared: Path = PREPARED) -> str | None:
             f"`python partA/corpus/prep.py` once (downloads and hash-checks the archive)")
 
 
+LLAMA = "hf:meta-llama/Llama-3.2-3B@13afe5124825b4f3751f836b40dafda64c1ed062"
+
+
+def missing_llama() -> str | None:
+    """The FLM-4B proxy tokenizer is gated (D-04); graders may not have access."""
+    import fertility_v1 as v1
+
+    try:
+        v1.load_tokenizer(LLAMA)
+    except Exception as exc:
+        return (f"Llama-3.2-3B tokenizer unavailable ({type(exc).__name__}): accept the licence at "
+                f"https://huggingface.co/meta-llama/Llama-3.2-3B, then run `hf auth login`")
+    return None
+
+
 def missing_gpt2() -> str | None:
     try:
         import tiktoken

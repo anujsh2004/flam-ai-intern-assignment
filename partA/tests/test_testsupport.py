@@ -26,6 +26,19 @@ def test_given_one_flores_file_missing_when_checked_then_it_is_named(tmp_path):
     assert FLORES_FILES[0] in missing_flores(tmp_path)
 
 
+def test_given_gated_llama_unavailable_when_checked_then_reason_says_how_to_get_access(monkeypatch):
+    import fertility_v1 as v1
+
+    from testsupport import missing_llama
+
+    def denied(spec):
+        raise OSError("You are trying to access a gated repo.")
+
+    monkeypatch.setattr(v1, "load_tokenizer", denied)
+    reason = missing_llama()
+    assert "meta-llama/Llama-3.2-3B" in reason and "hf auth login" in reason
+
+
 def test_given_tiktoken_failure_when_checked_then_gpt2_reason_is_returned(monkeypatch):
     import tiktoken
 

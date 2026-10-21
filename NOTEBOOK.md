@@ -165,3 +165,20 @@ Next: commit this notebook and `state.md` update, merge A1 into `main` after app
   Indic own fertility moves only −0.01 to −0.04%, on the 30–56 lines with Latin-script words. Material under D-14 for both tokenizers.
 - **Surprise:** lowercasing *increases* English token counts, so v0 *overstates* English fertility and *understates* the Indic gap. My hypothesis is that both vocabularies were learned from cased text; I have not tested this.
 - Verdict holds: code bug. It measures unserved text, and the bias falls on English only.
+
+**Step 7, F4 NFC** (pre-registered as "looks suspicious but fine").
+- Flag added test-first: precomposed U+095B is 1 code-point token raw, 2 after NFC.
+- Design fix along the way: result records stored `repr(Config)`, so every new field churned every committed JSON. They now store only the fields that differ from v0. Regenerated files had identical numbers (checked).
+- Measured: **negligible under both tokenizers**. Largest moves: gpt2 hin −0.11% fertility; XLM-R kan +0.06%. Every other metric is under 0.1%.
+- **My own claim, re-checked.** I had justified XLM-R with "it normalises internally". If that were fully true, NFC would change 0 lines, but the harness said 183 Hindi lines "changed".
+  - Direct probe: XLM-R's precompiled normaliser maps raw `ज़` and its NFC form to the same code points and the same token (id 84173).
+  - So the 183 was mostly **tok/char moving through `len(line)`** (the code-point denominator), not tokens.
+- **Harness flaw found and fixed, test-first.** `lines_changed` mixed "tokens changed" with "any metric changed". It now reports `tokens / words / any_metric` separately. Old counts equal the new `any_metric` in all 5 files; other numbers are identical.
+- The split shows each mechanism:
+  - F1 changes words only (kan 0/507/507);
+  - F3 changes tokens only (eng 925/0/925);
+  - F4 under gpt2: hin tokens change in 180 lines (byte-level BPE sees different bytes);
+  - F4 under XLM-R: hin tokens change in **3**, any metric in 183. My claim holds for Hindi nukta letters.
+- **Kannada differs:** NFC *composes* a vowel sign plus a length mark (U+0CD5/U+0CD6) and changes tokens in 17 lines under both tokenizers.
+- Verdict confirmed with evidence: **looks suspicious but fine**. The mechanism depends on the tokenizer and script; the effect is ≤0.11% everywhere.
+- **Cost noted:** the staleness test now recomputes 5 result files, so the suite takes ~64 s and the mutation run ~20 min.

@@ -1,0 +1,45 @@
+{
+  "source": "FLORES-200 (Meta/NLLB), dev + devtest",
+  "archive_url": "https://dl.fbaipublicfiles.com/nllb/flores200_dataset.tar.gz",
+  "archive_sha256": "b8b0b76783024b85797e5cc75064eb83fc5288b41e9654dabc7be6ae944011f6",
+  "license": "CC-BY-SA 4.0 (stated on https://huggingface.co/datasets/facebook/flores)",
+  "languages": [
+    "eng_Latn",
+    "hin_Deva",
+    "kan_Knda",
+    "tam_Taml"
+  ],
+  "sentences": {
+    "dev": {
+      "eng_Latn": 997,
+      "hin_Deva": 997,
+      "kan_Knda": 997,
+      "tam_Taml": 997
+    },
+    "devtest": {
+      "eng_Latn": 1012,
+      "hin_Deva": 1012,
+      "kan_Knda": 1012,
+      "tam_Taml": 1012
+    }
+  },
+  "nfc_changed_lines": {
+    "eng_Latn": {
+      "dev": 0,
+      "devtest": 0
+    },
+    "hin_Deva": {
+      "dev": 90,
+      "devtest": 93
+    },
+    "kan_Knda": {
+      "dev": 10,
+      "devtest": 7
+    },
+    "tam_Taml": {
+      "dev": 2,
+      "devtest": 2
+    }
+  },
+  "note": "Prepared text is the raw FLORES text; NFC normalisation is measured, not applied."
+}

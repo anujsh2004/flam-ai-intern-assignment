@@ -1,0 +1,130 @@
+# Decision log
+
+Format per decision: problem, alternatives (pros/cons), assumptions & constraints, evaluation criteria & evidence, choice and rationale, why alternatives were rejected, when another would win, status.
+Statuses: **Decided** (evidence in hand), **Provisional** (reasoned, awaiting experiment), **Open**.
+Sources must be real and read; none are cited yet. Where X/Twitter or articles are used they are supplementary, never proof.
+
+---
+
+## D-01 Repository layout and branch strategy — Decided (needs user ack)
+- **Problem:** how to organise the repo so it matches the required deliverable and stays reviewable.
+- **Alternatives:** (1) repo root = submission root with `partA/ partB/ partC/`, docs under `docs/`; (2) nested `your-submission/` folder; (3) docs at root.
+- **Pros/cons:** (1) matches the PDF tree and graders open the repo directly; fewer path surprises. (2) literal to the PDF text but adds a pointless level. (3) clutters the root.
+- **Assumptions:** the PDF's `your-submission/` is a placeholder name for the repo root.
+- **Choice:** option 1. Branch-per-phase off `main`, `--no-ff` merges after tests pass.
+- **Rejected:** 2 (redundant nesting). **When others win:** if graders require the literal folder name — trivial to rename.
+- **Open question for user:** confirm.
+
+## D-02 Language/tooling for analysis — Decided
+- **Problem:** implementation language/test tooling.
+- **Alternatives:** Python + pytest; Python + unittest; notebooks.
+- **Evidence/constraints:** starter code is Python; installed: Python 3.14, numpy, pandas, matplotlib. `pytest`, `tiktoken`, `transformers` not installed (checked via pip list).
+- **Choice:** Python scripts + pytest (BDD scenarios written as Given/When/Then docstrings/test names; `pytest-bdd` is not needed — avoids dependency weight). Notebooks rejected: poor diffs, hard for a live defense edit.
+- **Risk:** Python 3.14 may lack wheels for some libs (tiktoken/tokenizers/torch). Fallback is a Python 3.11/3.12 venv.
+- **Verified 2026-10-21:** a 3.14 venv installs and imports pytest 9.1.1, regex 2026.9.29, tiktoken 0.14.0, tokenizers 0.23.3 and transformers 5.20.2. PyTorch is not installed, which is fine: tokenizers only. Status: **Decided.**
+
+## D-03 Evaluation corpus source (A1) — Decided (verified 2026-10-21)
+- **Problem:** A1 needs >=4 languages (English, Hindi, 2 Dravidian) to measure tokenizer cost across languages. The A3 question ("what should the denominator hold constant?") needs text whose *content* is the same across languages.
+- **Criteria (priority order):**
+  1. parallel by construction, so content is held constant;
+  2. covers eng/hin and >=2 Dravidian languages;
+  3. translation quality and documented provenance;
+  4. comparability with published tokenizer studies;
+  5. reproducible access without credentials;
+  6. licence permits our use;
+  7. size enough for stable corpus-level ratios.
+
+  Domain match to production traffic is wanted, but no candidate fully meets it, so it is handled as a caveat.
+
+| Candidate | Parallel? | Provenance / quality | Size | Access, licence | Main weakness |
+|---|---|---|---|---|---|
+| **FLORES-200 dev+devtest** (chosen) | N-way, line-aligned; 200 langs incl. hin/kan/tam/tel/mal | Professional translation from English, QA threshold 90/100 (Goyal et al.) | 997+1,012 | Ungated tarball (hash-checked); CC BY-SA 4.0 | Formal Wiki register; translationese (English-original) |
+| FLORES+ (OLDI) | Same text, 230 langs | FLORES-200 plus maintained corrections | Same | HF gated + token; CC BY-SA 4.0; asks no training use and no public redistribution | Needs credentials; less used in published fertility tables |
+| IN22-Gen (AI4Bharat) | N-way, 22 Indic + English | India-centric Wiki/Web content | 1,024 | HF; CC BY 4.0 | Less standard for fertility comparisons |
+| IN22-Conv | N-way | Conversational-style sentences | 1,503 | HF; CC BY 4.0 | Small; still translated |
+| Samanantar | Pairwise en-X, mined | Automatically mined, noisy | very large | Download | Not an eval set; not N-way; misalignment noise |
+| Tatoeba | Partly | Volunteer, very short sentences | Uneven | CC BY | Uneven coverage, short, not N-way |
+| Self-assembled (e.g. per-language Wikipedia) | No | Not parallel | Any | Varies | Content not constant, so cross-language ratios are uninterpretable |
+
+- **Evidence (all checked this session):**
+  - **Access:** tarball HTTP 200, 25,585,843 bytes, SHA-256 `b8b0…11f6`.
+  - **Splits:** 997/1,012 lines in all 4 languages; 281+281 articles, matching FLORES-101 Table 1.
+  - **Alignment:** number-match 99.2–99.7%; length ratio range 0.49–2.03.
+  - **Duplicates and register:** 0 duplicates; wikinews/wikibooks/wikivoyage 689/652/668.
+  - **Licence:** CC BY-SA 4.0 per the HF card.
+  - **Comparability:** Petrov et al. (NeurIPS 2023, §3–4) define the premium |t(s_A)|/|t(s_B)| on FLORES-200's ~2,000 sentences, the same unit we use.
+  - **Provenance:** FLORES-101 (Goyal et al., ar5iv §3) describes 3–5 contiguous sentences per article, translation from English and the 90% quality threshold.
+  - **Sample size:** codepoint-ratio CI is about ±0.7%. The article-clustered and i.i.d. CIs are nearly equal, and dev vs devtest agree within 0.8%.
+- **Why chosen:** it is the only candidate that meets criteria 1–6 together. It is parallel and professionally translated, so a per-sentence comparison holds content constant. It is the standard set in tokenizer-parity work, so our numbers can be checked against the literature. It needs no credentials, which matters for a reproducible repo and the live defense.
+- **Why not the others:**
+  - **FLORES+:** same text but needs credentials. It is the right choice if language-specific corrections matter.
+  - **IN22-Gen:** a better domain match for India-centric topics. It would be the stronger primary corpus if the question were Indian-origin content rather than "same content vs English". A good robustness check.
+  - **IN22-Conv:** closest to chat register. It would serve best for estimating casual-traffic cost; future work.
+  - **Samanantar and Tatoeba:** fail the parallel or quality criteria.
+- **When another would win:** if production traffic is conversational or India-centric, IN22-Conv or IN22-Gen numbers would be more predictive of real cost.
+- **Splits:** dev + devtest (2,009). No training happens, so there is no leakage reason to hold devtest out. Splits are reported separately as a consistency check.
+- **Status:** **Decided.**
+
+## D-04 Tokenizers for A3 — Open
+- **Alternatives:** baseline `gpt2`/tiktoken (as v0); `cl100k_base`/`o200k_base`; XLM-RoBERTa (SentencePiece, multilingual); an Indic-focused tokenizer (e.g. IndicBERT/MuRIL); Llama-3 / Gemma / Qwen tokenizers (open weights).
+- **Criteria:** open and downloadable without gating, Indic coverage, relevance to a ~128k-vocab model like FLM-4B (spec says 128k vocab — Llama-3-class tokenizer is the closest comparison), ease of reproduction.
+- **To verify:** which load offline-reproducibly; effect of vocab size on fertility (confounded by vocab — must note in caveats).
+- **Status:** Open; need >=2 incl. one Indic-aware and keep gpt2 as the continuity baseline. User confirmed open Hugging Face models/tokenizers are acceptable. Gated repos (e.g. Llama) may need auth — verify.
+
+## D-05 Grapheme-cluster counting (A3 denominator) — Decided, with a documented non-uniformity
+- **Alternatives:** `regex` `\X` (UAX #29 extended grapheme clusters); `grapheme` package; manual count of non-combining code points; ICU (PyICU, a heavy Windows install).
+- **Evidence (`partA/tests/test_units.py`; Python unidata 16.0.0, regex 2026.9.29):**
+  - **Vowel signs and combining marks:** attach correctly. हि = 1 cluster, and "cafe" + U+0301 = 4 clusters.
+  - **Devanagari, Telugu and Malayalam conjuncts:** ka+virama+ssa forms **1** cluster, and नमस्ते is 3 clusters. This is the Unicode 15.1 conjunct rule.
+  - **Kannada and Tamil conjuncts:** the same sequence gives **2** clusters.
+- **Implication:** grapheme clusters are **not a uniform unit across our languages**. Relative to Hindi, they over-count Kannada conjuncts. For Tamil the split matches the visible pulli, so it is arguably correct there.
+- **Decision:** use `regex` `\X` for the grapheme column. It is standard, already a dependency and pinned by tests. Do **not** use graphemes as the deciding denominator; carry this caveat wherever the column appears.
+- **When another would win:** a script-aware akshara (syllable) segmenter would give a uniform visual unit. It is not worth the complexity, because the deciding denominator is the parallel sentence (D-06).
+- **Status:** Decided.
+
+## D-06 Which single number drives routing/cost (A3) — Provisional (hypothesis)
+- **Reasoning so far:** a denominator should hold *content/meaning* constant across languages. Whitespace words and UTF-8 bytes do not (word boundaries and script byte widths differ by language). On parallel text, tokens per parallel sentence (or tokens relative to the English token count for the same sentence) holds content approximately constant, and is what billing/context cost actually tracks.
+- **Caveat:** translations differ in length/information; cost depends on both input and output token counts; per-sentence average is sensitive to sentence length mix.
+- **A1 evidence (denominators only, no tokenizer yet):**
+  - **Words:** the same content takes 1.17× English whitespace words in Hindi, but 0.74× in Kannada and 0.77× in Tamil.
+  - **Bytes:** 2.56–3.19×.
+  - **Code points:** 1.00–1.17×.
+  - **Conclusion:** word and byte denominators distort in different directions for identical content, which supports holding content constant via parallel sentences.
+- **Needs:** experiment with real tokenizers; compare ratios under each denominator. Status: **Provisional — not to be stated as a result.**
+
+## D-07 Part C approach (SFT vs rewriter vs prompting) — Open
+- **Constraints:** 1xA100-80GB for 2 wks; reviewer only for Hindi+Kannada, 10 h/wk (=20 h in the GPU window); launch review in 3 wks; no external API.
+- **Considerations to quantify:** SFT data volume vs reviewer verification capacity; rewriter adds latency per request and 6-language quality with no native check for 4 languages; prompting is cheapest and sets the baseline that SFT/rewriter must beat.
+- **Process:** decide after Phase 1-5 with numeric arithmetic; the day-1 experiment likely is a prompt-only baseline measured by the reviewer. Status: **Open.**
+
+## D-08 Authorship and attribution — Decided (user instruction)
+- User is the sole author on GitHub. No `Co-Authored-By` or tool-attribution lines in commits/PRs/files. Existing global git identity (`anujsh2004`) is used unchanged.
+
+## D-09 GB vs GiB and budget formula for B1 — Open
+- `gpu_memory_utilization` 0.92 of 24 GB; weights 4.2B x 2 B; overhead 1.6 GB. Whether "24 GB" means 24e9 or 24 GiB changes the sequence count by ~1; answer must state the convention and show both. Check against the log (`preempted_seqs` begins at batch 32; `kv_cache_util` 0.93 at batch 24). Status: **Open — resolve in Phase 5 (Part B) with tests.**
+
+## D-10 Work order: Part A before B and C — Decided (user recommendation)
+- **Alternatives:** B first (small, deterministic) vs A first.
+- **Reasoning:** B and C depend only on `bench/` and the prompt; A1->A3 is the longest chain and carries network/library-install risk, and is 50 of 100 points. Cost: B's cheap points come later. Order: A1, A2 (may start on toy corpus in parallel), A3, A4, B, C.
+- **Python:** try a Python 3.14 venv first; fall back to 3.12 if tokenizer wheels are missing (D-02).
+
+## D-11 Redistribution of FLORES text in the repo — Decided: option (b), not committed for now (user, 2026-10-21)
+- **Problem:** we earlier agreed to commit the prepared text so the repo runs offline. Research since then turned up two things:
+  - **FLORES+ card:** asks that the data not be used for training and not be redistributed publicly unless it is protected from scraping.
+  - **`facebook/flores` card:** gates access under the heading "Protecting the integrity of FLORES for evaluation". The gated conditions themselves can't be read without logging in.
+- **Alternatives:**
+  - **(a) Commit the text:** offline and simple, but it puts eval text in a public, scrapeable GitHub repo, against the integrity request.
+  - **(b) Commit scripts, manifest and aggregate `stats.json` only:** `prep.py` regenerates the text, hash-verified, with one command and one ~26 MB download.
+  - **(c) Commit an encrypted or zipped copy:** extra complexity with no benefit over (b).
+- **Proposed:** (b). Reproducibility is unchanged because the download is scripted and hash-checked, and the evaluation set's integrity is respected.
+- **When (a) would win:** a private repo, or a grader without network access. The ZIP submission option could include the text then.
+- **Status:** **Decided (b) "for now"** by the user on 2026-10-21. Enforced by `.gitignore` (`partA/corpus/prepared/*.txt`, `*.tsv`); `manifest.json` stays tracked. Revisit if the submission goes out as a ZIP.
+
+## D-12 Line endings and dependency pins — Decided (2026-10-21)
+- **Line endings:**
+  - **Problem:** this machine has `core.autocrlf=true`, and on Windows Python's `write_text` emits `\r\n`. A2 audits the starter kit's exact bytes (e.g. double spaces), so conversions must be impossible.
+  - **Decision:** `.gitattributes` with LF for authored text, `-text -eol` for `starter_kit/**` and the FLORES text, and `binary` for archives and documents. Generated JSON is written with `newline="\n"`.
+  - **Evidence:** `git check-attr` per file; `cmp` shows `starter_kit/` byte-identical to the provided kit; a test asserts no CR bytes in generated JSON.
+- **Pins:**
+  - **Decision:** exact versions that ran in `.venv`, including numpy 2.5.4 (pulled in by `transformers`) and pandas 3.0.6. At the user's request, pandas was installed into the venv before pinning, so the pin is a tested version.
+  - **Note:** global Python has pandas 2.3.3. pandas 3 is a new major version, so check Part B code against it.

@@ -42,6 +42,32 @@ def test_given_v0_config_when_analyzing_then_identical_to_original(path, v0, gpt
     assert (got["fertility"], got["tok_per_char"]) == original  # exact, not approx
 
 
+def one_token_per_word(s):
+    """Fake tokenizer: one token per real (whitespace-delimited) word."""
+    return s.split()
+
+
+def test_f1_given_double_space_when_split_on_space_then_empty_word_inflates_denominator():
+    import fertility_v1 as v1
+
+    # "a  b".split(" ") -> ["a", "", "b"]: 2 tokens / 3 "words"
+    assert v1.analyze(["a  b"], one_token_per_word, v1.V0)["fertility"] == pytest.approx(2 / 3)
+
+
+def test_f1_given_whitespace_split_when_double_space_then_only_real_words_count():
+    import fertility_v1 as v1
+
+    cfg = v1.replace(v1.V0, split="whitespace")
+    assert v1.analyze(["a  b"], one_token_per_word, cfg)["fertility"] == pytest.approx(1.0)
+
+
+def test_f1_given_cli_split_flag_then_config_uses_it():
+    import fertility_v1 as v1
+
+    assert v1.config_from_args(v1.build_parser().parse_args(["--corpus", "x=y", "--split", "whitespace"])).split == "whitespace"
+    assert v1.config_from_args(v1.build_parser().parse_args(["--corpus", "x=y", "--v0"])) == v1.V0
+
+
 def test_given_v0_flag_when_run_as_cli_then_stdout_matches_original_byte_for_byte():
     args = ["--corpus", f"eng={TOY / 'eng_sample.txt'}", "--corpus", f"hin={TOY / 'hin_sample.txt'}",
             "--tokenizer", "gpt2"]

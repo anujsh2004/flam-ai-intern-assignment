@@ -11,7 +11,7 @@ Usage:
 """
 import argparse
 import unicodedata
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 
@@ -19,8 +19,21 @@ from pathlib import Path
 class Config:
     """Settings for one measurement; fields are added one audited fix at a time."""
 
+    # F1: "space" = line.split(" ") (v0; double spaces create empty words),
+    #     "whitespace" = line.split() (only real words)
+    split: str = "space"
+
 
 V0 = Config()  # original fertility.py behaviour
+SPLITS = ("space", "whitespace")
+
+
+def count_words(line: str, cfg: Config) -> int:
+    if cfg.split == "space":
+        return len(line.split(" "))
+    if cfg.split == "whitespace":
+        return len(line.split())
+    raise ValueError(f"unknown split mode {cfg.split!r}")
 
 
 def load_tokenizer(spec: str):
@@ -52,20 +65,30 @@ def analyze(lines: list[str], encode, cfg: Config) -> dict:
     for line in lines:
         line = line.lower()
         tokens = encode(line)
-        words = line.split(" ")
-        per_line_fertility.append(len(tokens) / len(words))
+        per_line_fertility.append(len(tokens) / count_words(line, cfg))
         per_line_tpc.append(len(tokens) / len(line))
     n = len(per_line_fertility)
     return {"fertility": sum(per_line_fertility) / n, "tok_per_char": sum(per_line_tpc) / n}
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
     ap.add_argument("--corpus", action="append", required=True, metavar="LANG=PATH")
     ap.add_argument("--tokenizer", default="gpt2")
-    ap.add_argument("--v0", action="store_true", help="reproduce the original script exactly")
-    args = ap.parse_args()
-    cfg = V0
+    ap.add_argument("--v0", action="store_true", help="reproduce the original script exactly (overrides other flags)")
+    ap.add_argument("--split", choices=SPLITS, default="whitespace", help="F1: word splitting")
+    return ap
+
+
+def config_from_args(args) -> Config:
+    if args.v0:
+        return V0
+    return Config(split=args.split)
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    cfg = config_from_args(args)
 
     encode = load_tokenizer(args.tokenizer)
     print(f"tokenizer: {args.tokenizer}")

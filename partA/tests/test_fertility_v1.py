@@ -121,6 +121,18 @@ def test_f3_given_cli_lowercase_flags_then_config_follows():
     assert cfg_for("--lowercase") == v1.replace(v1.V1, lowercase=True)
 
 
+@pytest.mark.parametrize("spec,expected", [
+    ("gpt2", ("tiktoken", "gpt2", None)),
+    ("hf:xlm-roberta-base", ("hf", "xlm-roberta-base", None)),
+    ("hf:FacebookAI/xlm-roberta-base@e73636d4f797dec63c3081bb6ed5c7b0bb3f2089",
+     ("hf", "FacebookAI/xlm-roberta-base", "e73636d4f797dec63c3081bb6ed5c7b0bb3f2089")),
+])
+def test_given_tokenizer_spec_when_parsed_then_revision_can_be_pinned(spec, expected):
+    import fertility_v1 as v1
+
+    assert v1.parse_tokenizer_spec(spec) == expected
+
+
 PASTED = "First line here.\n\n   \n\tSecond  line.\n\n"  # blank, whitespace-only, tab, double space
 
 

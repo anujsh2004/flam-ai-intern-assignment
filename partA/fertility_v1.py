@@ -40,15 +40,24 @@ def count_words(line: str, cfg: Config) -> int:
     raise ValueError(f"unknown split mode {cfg.split!r}")
 
 
-def load_tokenizer(spec: str):
+def parse_tokenizer_spec(spec: str) -> tuple[str, str, str | None]:
+    """'gpt2' -> tiktoken; 'hf:repo' or 'hf:repo@revision' -> HF (pin a revision for reproducibility)."""
     if spec.startswith("hf:"):
+        repo, _, revision = spec[3:].partition("@")
+        return "hf", repo, revision or None
+    return "tiktoken", spec, None
+
+
+def load_tokenizer(spec: str):
+    kind, name, revision = parse_tokenizer_spec(spec)
+    if kind == "hf":
         from transformers import AutoTokenizer
 
-        tok = AutoTokenizer.from_pretrained(spec[3:])
+        tok = AutoTokenizer.from_pretrained(name, revision=revision)
         return lambda s: tok.encode(s, add_special_tokens=False)
     import tiktoken
 
-    return tiktoken.get_encoding(spec).encode
+    return tiktoken.get_encoding(name).encode
 
 
 def read_raw_lines(path: Path) -> list[str]:

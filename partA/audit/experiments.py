@@ -21,10 +21,13 @@ TOY = ROOT / "starter_kit" / "corpus_sample"
 FLORES = ROOT / "partA" / "corpus" / "prepared"
 FLORES_LANGS = {"eng": "eng_Latn", "hin": "hin_Deva", "kan": "kan_Knda", "tam": "tam_Taml"}
 THRESHOLD_PCT = 1.0  # D-14, pre-registered
+# pinned revisions so results are reproducible (D-04)
+XLMR = "hf:FacebookAI/xlm-roberta-base@e73636d4f797dec63c3081bb6ed5c7b0bb3f2089"
 
 # finding -> config that differs from v0 in exactly that one fix
 FINDINGS = {
     "F1": v1.replace(v1.V0, split="whitespace"),
+    "F3": v1.replace(v1.V0, lowercase=False),
 }
 
 

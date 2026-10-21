@@ -68,6 +68,21 @@ Format: hypothesis -> experiment -> result -> revision. Dead ends are kept.
 - Measured: 282 and 45 CR bytes. The cause is that `Path.write_text` translates `\n` to `\r\n` on Windows.
 - The earlier check (`grep $'\r'`) was broken in this shell: it does not find a CR that `tr -cd '\r' | wc -c` does find.
 - The committed blobs were already LF thanks to `.gitattributes`.
-- Fix: a test asserting no CR bytes (red: 2 failed) -> `newline="\n"` -> green (44 passed). The fix is a separate commit.
+- Fix: a test asserting no CR bytes (red: 2 failed) -> `newline="\n"` -> green (44 passed). Committed separately as `edd8a50`.
 
-Next: merge A1 into `main` after approval, then A2.
+**Same bug, a second time, in my own tooling.**
+- After the docs commit (`4bedafe`), git warned about CRLF in `docs/decision.md` on disk: 130 CR bytes.
+- Cause: an earlier one-off Python edit script that wrote the file in text mode, the same Windows `\n` -> `\r\n` translation.
+- The committed blob had 0 CR. I converted the working copy to LF and confirmed with `cmp` that it is identical to the committed version.
+- Lesson: on this machine, any Python write must pass `newline="\n"` (or write bytes).
+
+**Re-measured, not assumed:** CR bytes per committed file.
+- 0 everywhere except `starter_kit/bench/bench_log.csv`: 14 CR in 14 lines.
+- That file is CRLF in the *original* kit (checked against the source folder), so it is original data and `-text` correctly preserves it.
+- Relevant later: anything parsing it (Part B) must handle `\r\n`.
+
+**Commits** (local; sole author; author date = newest file time, commit date = real time):
+- `bd21ead` on `main`
+- `31f0e44`, `edd8a50`, `4bedafe` on `part-a-corpus`
+
+Next: commit this notebook and `state.md` update, merge A1 into `main` after approval, then A2.

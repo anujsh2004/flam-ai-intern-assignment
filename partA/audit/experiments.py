@@ -24,6 +24,11 @@ FLORES_LANGS = {"eng": "eng_Latn", "hin": "hin_Deva", "kan": "kan_Knda", "tam": 
 THRESHOLD_PCT = 1.0  # D-14, pre-registered
 # pinned revisions so results are reproducible (D-04)
 XLMR = "hf:FacebookAI/xlm-roberta-base@e73636d4f797dec63c3081bb6ed5c7b0bb3f2089"
+# FLM-4B proxy: config matches model_spec.md on all 5 architecture numbers (D-04); gated repo
+LLAMA = "hf:meta-llama/Llama-3.2-3B@13afe5124825b4f3751f836b40dafda64c1ed062"
+# instrument findings: (tokenizer the report used, tokenizer of the model being served)
+TOKENIZER_FINDINGS = {"F9": ("gpt2", LLAMA)}
+CONFIGS = {"v0": v1.V0, "v1": v1.V1}
 
 # finding -> config that differs from v0 in exactly that one fix
 FINDINGS = {
@@ -74,19 +79,14 @@ def threshold_verdict(deltas: dict) -> str:
     return "negligible" if all(abs(d) < THRESHOLD_PCT for d in deltas.values()) else "material"
 
 
-def compare(before_cfg, after_cfg, encode, corpora) -> dict:
-    before = measure(before_cfg, encode, corpora)
-    after = measure(after_cfg, encode, corpora)
+def delta_and_verdict(before: dict, after: dict) -> tuple[dict, dict]:
+    """Per-metric delta % and the D-14 verdicts (overall, per language, per language own metrics)."""
     delta = {
         corpus: {
             lang: {k: (after[corpus][lang][k] - v) / v * 100 for k, v in metrics.items()}
             for lang, metrics in langs.items()
         }
         for corpus, langs in before.items()
-    }
-    changed = {
-        corpus: {lang: lines_changed(before_cfg, after_cfg, encode, lines) for lang, lines in langs.items()}
-        for corpus, langs in corpora.items()
     }
     own = ("fertility", "tok_per_char")  # a language's own metrics, excluding ratios vs eng
     verdict = {
@@ -97,7 +97,25 @@ def compare(before_cfg, after_cfg, encode, corpora) -> dict:
         }
         for corpus, langs in delta.items()
     }
+    return delta, verdict
+
+
+def compare(before_cfg, after_cfg, encode, corpora) -> dict:
+    before = measure(before_cfg, encode, corpora)
+    after = measure(after_cfg, encode, corpora)
+    delta, verdict = delta_and_verdict(before, after)
+    changed = {
+        corpus: {lang: lines_changed(before_cfg, after_cfg, encode, lines) for lang, lines in langs.items()}
+        for corpus, langs in corpora.items()
+    }
     return {"before": before, "after": after, "delta_pct": delta, "lines_changed": changed, "threshold_verdict": verdict}
+
+
+def compare_tokenizers(cfg, encode_a, encode_b, corpora) -> dict:
+    """F9: same config, different measuring instrument (tokenizer a -> b)."""
+    a, b = measure(cfg, encode_a, corpora), measure(cfg, encode_b, corpora)
+    delta, verdict = delta_and_verdict(a, b)
+    return {"a": a, "b": b, "delta_pct": delta, "threshold_verdict": verdict}
 
 
 def changed_fields(cfg, base=v1.V0) -> dict:
@@ -110,11 +128,37 @@ def result_record(finding: str, tokenizer: str, cfg, res: dict) -> dict:
     return {"finding": finding, "tokenizer": tokenizer, "variant": changed_fields(cfg), **res}
 
 
+def tokenizer_record(finding: str, config_name: str, res: dict) -> dict:
+    a, b = TOKENIZER_FINDINGS[finding]
+    return {"finding": finding, "config": config_name, "tokenizer_a": a, "tokenizer_b": b, **res}
+
+
+def run_tokenizer_finding(finding: str, config_name: str) -> None:
+    a, b = TOKENIZER_FINDINGS[finding]
+    res = tokenizer_record(finding, config_name, compare_tokenizers(
+        CONFIGS[config_name], v1.load_tokenizer(a), v1.load_tokenizer(b), load_corpora()))
+    out = HERE / "results" / f"{finding}_{config_name}.json"
+    out.parent.mkdir(exist_ok=True)
+    out.write_text(json.dumps(res, indent=2) + "\n", encoding="utf-8", newline="\n")
+    print(f"{finding} [{config_name}] {a} -> {b.split('@')[0]}  -> {out.relative_to(ROOT)}")
+    for corpus, langs in res["delta_pct"].items():
+        print(f"[{corpus}] verdict: {res['threshold_verdict'][corpus]['overall']}")
+        for lang, m in langs.items():
+            ra, rb = res["a"][corpus][lang], res["b"][corpus][lang]
+            print(f"  {lang}: value {ra['fertility']:.4f} -> {rb['fertility']:.4f} ({m['fertility']:+.2f}%), "
+                  f"ratio vs eng {ra['fertility_ratio_vs_eng']:.4f} -> {rb['fertility_ratio_vs_eng']:.4f} "
+                  f"({m['fertility_ratio_vs_eng']:+.2f}%)")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("finding", choices=sorted(FINDINGS))
-    ap.add_argument("--tokenizer", default="gpt2")
+    ap.add_argument("finding", choices=sorted(FINDINGS) + sorted(TOKENIZER_FINDINGS))
+    ap.add_argument("--tokenizer", default="gpt2", help="for config findings")
+    ap.add_argument("--config", choices=sorted(CONFIGS), default="v0", help="for tokenizer findings (F9)")
     args = ap.parse_args()
+    if args.finding in TOKENIZER_FINDINGS:
+        run_tokenizer_finding(args.finding, args.config)
+        return
 
     cfg = FINDINGS[args.finding]
     res = result_record(args.finding, args.tokenizer, cfg,

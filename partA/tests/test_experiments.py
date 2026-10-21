@@ -2,6 +2,8 @@
 
 Scenarios use a fake tokenizer so expected numbers are derivable by hand.
 """
+from pathlib import Path
+
 import pytest
 
 
@@ -74,6 +76,32 @@ def test_given_variant_when_recorded_then_only_fields_differing_from_v0_are_stor
     assert rec["variant"] == {"lowercase": False}
 
 
+def one_token_per_letter(s):
+    return [c for c in s if not c.isspace()]
+
+
+def test_f9_given_same_config_when_tokenizer_swapped_then_ratios_compared_exactly():
+    """F9: the instrument. Config fixed, tokenizer changed."""
+    import fertility_v1 as v1
+    from audit.experiments import compare_tokenizers
+
+    corpora = {"toy": {"eng": ["ab cd"], "hin": ["abcdef"]}}
+    cfg = v1.replace(v1.V0, denominator="sentence")
+    res = compare_tokenizers(cfg, one_token_per_word, one_token_per_letter, corpora)
+    # per word-token tokenizer: eng 2, hin 1 -> ratio 0.5; per letter: eng 4, hin 6 -> ratio 1.5
+    assert res["a"]["toy"]["hin"]["fertility_ratio_vs_eng"] == pytest.approx(0.5)
+    assert res["b"]["toy"]["hin"]["fertility_ratio_vs_eng"] == pytest.approx(1.5)
+    assert res["delta_pct"]["toy"]["hin"]["fertility_ratio_vs_eng"] == pytest.approx(200.0)
+    assert res["threshold_verdict"]["toy"]["overall"] == "material"
+
+
+def test_f9_registry_names_gpt2_and_the_pinned_llama_proxy():
+    from audit.experiments import LLAMA, TOKENIZER_FINDINGS
+
+    assert TOKENIZER_FINDINGS["F9"] == ("gpt2", LLAMA)
+    assert LLAMA == "hf:meta-llama/Llama-3.2-3B@13afe5124825b4f3751f836b40dafda64c1ed062"
+
+
 def test_given_real_data_when_corpora_load_then_sizes_match_a1():
     from audit.experiments import load_corpora
 
@@ -94,25 +122,38 @@ def test_given_findings_registry_then_each_variant_differs_from_v0_in_exactly_on
         assert len(diff) == 1, (name, diff)
 
 
+RESULT_FILES = sorted((Path(__file__).resolve().parents[1] / "audit" / "results").glob("*.json"))
+
+
+def test_given_results_dir_then_committed_evidence_exists():
+    assert RESULT_FILES, "no committed results found"
+
+
 @pytest.mark.flores
 @pytest.mark.gpt2
-def test_given_committed_results_when_recomputed_then_identical():
-    """Guards against stale or hand-edited evidence (as A1's stats test does)."""
+@pytest.mark.parametrize("path", [
+    pytest.param(p, marks=pytest.mark.llama) if p.name.startswith("F9_") else p for p in RESULT_FILES
+], ids=lambda p: p.name[:40])
+def test_given_committed_result_when_recomputed_then_identical(path):
+    """Guards against stale or hand-edited evidence (as A1's stats test does). One test per
+    file, so a machine without gated Llama access still checks every other result."""
     import json
-    from pathlib import Path
 
     import fertility_v1 as v1
-    from audit.experiments import FINDINGS, compare, load_corpora, result_record
+    from audit.experiments import (CONFIGS, FINDINGS, TOKENIZER_FINDINGS, compare, compare_tokenizers,
+                                   load_corpora, result_record, tokenizer_record)
 
-    results = sorted((Path(__file__).resolve().parents[1] / "audit" / "results").glob("*.json"))
-    assert results, "no committed results found"
     corpora = load_corpora()
-    for path in results:
-        saved = json.loads(path.read_text(encoding="utf-8"))
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    if saved["finding"] in TOKENIZER_FINDINGS:
+        a, b = TOKENIZER_FINDINGS[saved["finding"]]
+        fresh = tokenizer_record(saved["finding"], saved["config"], compare_tokenizers(
+            CONFIGS[saved["config"]], v1.load_tokenizer(a), v1.load_tokenizer(b), corpora))
+    else:
         cfg = FINDINGS[saved["finding"]]
         fresh = result_record(saved["finding"], saved["tokenizer"], cfg,
                               compare(v1.V0, cfg, v1.load_tokenizer(saved["tokenizer"]), corpora))
-        assert json.loads(json.dumps(fresh)) == saved, path.name
+    assert json.loads(json.dumps(fresh)) == saved
 
 
 @pytest.mark.parametrize("deltas,expected", [

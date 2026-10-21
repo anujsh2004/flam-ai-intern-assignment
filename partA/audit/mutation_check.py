@@ -18,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 TESTS = ["partA/tests/test_v0_reproduction.py", "partA/tests/test_fertility_v1.py",
-         "partA/tests/test_experiments.py", "partA/tests/test_testsupport.py"]
+         "partA/tests/test_experiments.py", "partA/tests/test_testsupport.py", "partA/tests/test_f5_seed.py"]
 
 # (name, file, original snippet, mutated snippet); each snippet must occur exactly once
 MUTANTS = [
@@ -67,6 +67,12 @@ MUTANTS = [
     ("F1 variant equals v0", "partA/audit/experiments.py", '"F1": v1.replace(v1.V0, split="whitespace"),', '"F1": v1.V0,'),
     ("own-metrics verdict uses ratios too", "partA/audit/experiments.py", "threshold_verdict({k: m[k] for k in own})", "threshold_verdict(m)"),
     ("v0 SHA-256 guard disabled", "partA/audit/v0.py", "if got != V0_SHA256:", "if False:"),
+    ("F5 tech debt reintroduced in v1", "partA/fertility_v1.py",
+     "import argparse\n", "import argparse\nimport random\n\nrandom.seed(1337)\n"),
+    ("v1 line order depends on RNG", "partA/fertility_v1.py",
+     "        return [line for line in (raw.strip() for raw in f) if line]",
+     "        import random\n        out = [line for line in (raw.strip() for raw in f) if line]\n"
+     "        random.shuffle(out)\n        return out"),
     ("missing FLORES never reported", "partA/testsupport.py", "if not missing:", "if True:"),
     ("skip logic inverted (skips when present)", "partA/tests/conftest.py",
      "and (reason := check()):", "and not (reason := check()):\n            reason = 'mutant'"),

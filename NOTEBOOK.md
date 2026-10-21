@@ -209,3 +209,12 @@ Next: commit this notebook and `state.md` update, merge A1 into `main` after app
   - Try 3, using U+0941, was **red with the exact original error**.
 - **Fix:** the child is forced to `PYTHONIOENCODING=utf-8` and the parent decodes UTF-8 with `errors="replace"`. The regression test is green under both `PYTHONIOENCODING=utf-8` and `cp1252`.
 - **Lesson:** a repro that passes for the wrong reason is not a repro. Check the byte-level mechanism.
+
+**Step 9, F5 `random.seed(1337)`** (technical debt, D-13). v1 has omitted it since step 4; this step proves that was safe.
+- **Static:** the AST of the original uses `random` only as `import` and `.seed`, nothing else. The test asserts that exact list, so any other use would fail it. v1's AST uses `random` 0 times.
+- **Dynamic:** v0's results are identical after perturbing the global RNG with seeds 0, 1337 and 2³¹−1.
+- These are evidence tests, so not red->green: the removal predates them. Their power comes from mutants instead:
+  - "F5 tech debt reintroduced in v1" -> killed;
+  - "v1 line order depends on RNG" (`random.shuffle` of lines) -> killed, almost certainly by the AST test (54/55 passed; the failing test was not identified).
+- **Prediction recorded before the run:** the shuffle might survive as an equivalent mutant, because both aggregations are order-invariant sums apart from float rounding. Not settled by this run, since the AST test probably fired first.
+- Mutation **31/31**. Progress is invisible in background runs because Python buffers redirected output; future runs use `python -u`.

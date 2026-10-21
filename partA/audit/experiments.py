@@ -53,11 +53,16 @@ def measure(cfg, encode, corpora) -> dict:
     return out
 
 
-def lines_changed(before_cfg, after_cfg, encode, lines) -> int:
-    """Lines whose own per-line result differs between the two configs."""
-    a = v1.prepare(lines, before_cfg)
-    b = v1.prepare(lines, after_cfg)
-    return sum(v1.analyze([x], encode, before_cfg) != v1.analyze([y], encode, after_cfg) for x, y in zip(a, b))
+def lines_changed(before_cfg, after_cfg, encode, lines) -> dict:
+    """Per-line changes, kept apart: token count, word count, and any reported metric
+    (the last also catches tok/char moving only because len(line) changed)."""
+    out = {"tokens": 0, "words": 0, "any_metric": 0}
+    for x, y in zip(v1.prepare(lines, before_cfg), v1.prepare(lines, after_cfg)):
+        mx, my = v1.measured_text(x, before_cfg), v1.measured_text(y, after_cfg)
+        out["tokens"] += len(encode(mx)) != len(encode(my))
+        out["words"] += v1.count_words(mx, before_cfg) != v1.count_words(my, after_cfg)
+        out["any_metric"] += v1.analyze([x], encode, before_cfg) != v1.analyze([y], encode, after_cfg)
+    return out
 
 
 def threshold_verdict(deltas: dict) -> str:
@@ -123,6 +128,7 @@ def main() -> None:
             print(f"  {lang}: fertility {b['fertility']:.4f} -> {a['fertility']:.4f} ({m['fertility']:+.2f}%), "
                   f"ratio {b['fertility_ratio_vs_eng']:.4f} -> {a['fertility_ratio_vs_eng']:.4f} "
                   f"({m['fertility_ratio_vs_eng']:+.2f}%), lines changed {res['lines_changed'][corpus][lang]}")
+    # note: 'any_metric' includes tok/char moving only via len(line); 'tokens' is the token-count effect
 
 
 if __name__ == "__main__":

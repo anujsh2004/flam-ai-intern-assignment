@@ -19,7 +19,8 @@ def test_given_identical_configs_when_compared_then_every_delta_is_zero():
     res = compare(v1.V0, v1.V0, one_token_per_word, CORPORA)
     for metrics in res["delta_pct"]["toy"].values():
         assert all(d == 0 for d in metrics.values())
-    assert res["lines_changed"]["toy"] == {"eng": 0, "hin": 0}
+    zero = {"tokens": 0, "words": 0, "any_metric": 0}
+    assert res["lines_changed"]["toy"] == {"eng": zero, "hin": zero}
 
 
 def test_given_f1_variant_when_compared_then_delta_and_changed_lines_are_exact():
@@ -31,7 +32,8 @@ def test_given_f1_variant_when_compared_then_delta_and_changed_lines_are_exact()
     assert res["before"]["toy"]["eng"]["fertility"] == pytest.approx(5 / 6)
     assert res["after"]["toy"]["eng"]["fertility"] == pytest.approx(1.0)
     assert res["delta_pct"]["toy"]["eng"]["fertility"] == pytest.approx(20.0)  # (1 - 5/6) / (5/6)
-    assert res["lines_changed"]["toy"] == {"eng": 1, "hin": 0}
+    assert res["lines_changed"]["toy"] == {"eng": {"tokens": 0, "words": 1, "any_metric": 1},
+                                        "hin": {"tokens": 0, "words": 0, "any_metric": 0}}
     # ratio vs English: hin fertility 1.0 in both; ratio 1/(5/6)=1.2 -> 1/1=1.0
     assert res["before"]["toy"]["hin"]["fertility_ratio_vs_eng"] == pytest.approx(1.2)
     assert res["after"]["toy"]["hin"]["fertility_ratio_vs_eng"] == pytest.approx(1.0)
@@ -50,6 +52,19 @@ def test_given_change_in_one_language_only_when_judged_then_verdicts_exist_per_l
 
 
 @pytest.mark.flores
+def test_given_change_that_only_moves_code_points_then_token_lines_and_any_metric_lines_are_separated():
+    """NFC can change len(line) (tok/char's denominator) without changing tokens;
+    the audit must not report that as 'tokens changed'."""
+    import fertility_v1 as v1
+    from audit.experiments import compare
+
+    corpora = {"toy": {"eng": ["a b"], "hin": ["ज़ x"]}}  # precomposed za; NFC adds a code point
+    res = compare(v1.V0, v1.replace(v1.V0, nfc=False), one_token_per_word, corpora)
+    assert res["lines_changed"]["toy"]["hin"] == {"tokens": 0, "words": 0, "any_metric": 1}
+    res = compare(v1.V0, v1.replace(v1.V0, nfc=False), list, corpora)  # one token per code point
+    assert res["lines_changed"]["toy"]["hin"] == {"tokens": 1, "words": 0, "any_metric": 1}
+
+
 def test_given_variant_when_recorded_then_only_fields_differing_from_v0_are_stored():
     """Stable labels: adding a new Config field must not change existing records."""
     import fertility_v1 as v1

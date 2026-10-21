@@ -132,14 +132,38 @@
   },
   "lines_changed": {
     "toy": {
-      "eng": 3,
-      "hin": 0
+      "eng": {
+        "tokens": 3,
+        "words": 0,
+        "any_metric": 3
+      },
+      "hin": {
+        "tokens": 0,
+        "words": 0,
+        "any_metric": 0
+      }
     },
     "flores": {
-      "eng": 925,
-      "hin": 30,
-      "kan": 56,
-      "tam": 50
+      "eng": {
+        "tokens": 925,
+        "words": 0,
+        "any_metric": 925
+      },
+      "hin": {
+        "tokens": 30,
+        "words": 0,
+        "any_metric": 30
+      },
+      "kan": {
+        "tokens": 56,
+        "words": 0,
+        "any_metric": 56
+      },
+      "tam": {
+        "tokens": 50,
+        "words": 0,
+        "any_metric": 50
+      }
     }
   },
   "threshold_verdict": {

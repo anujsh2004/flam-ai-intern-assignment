@@ -80,12 +80,16 @@ def read_lines(path: Path, cfg: Config) -> list[str]:
     return prepare(read_raw_lines(path), cfg)
 
 
+def measured_text(line: str, cfg: Config) -> str:
+    """The exact string that is tokenized and counted for one prepared line."""
+    return line.lower() if cfg.lowercase else line
+
+
 def analyze(lines: list[str], encode, cfg: Config) -> dict:
     per_line_fertility = []
     per_line_tpc = []
     for line in lines:
-        if cfg.lowercase:
-            line = line.lower()
+        line = measured_text(line, cfg)
         tokens = encode(line)
         per_line_fertility.append(len(tokens) / count_words(line, cfg))
         per_line_tpc.append(len(tokens) / len(line))

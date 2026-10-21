@@ -81,7 +81,8 @@ def main() -> None:
         "nfc_changed_lines": nfc,
         "note": "Prepared text is the raw FLORES text; NFC normalisation is measured, not applied.",
     }
-    (OUT / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    # newline="\n": without it Windows writes \r\n and the bytes differ per OS
+    (OUT / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps({"sentences": counts, "nfc_changed_lines": nfc}, indent=2))
 
 

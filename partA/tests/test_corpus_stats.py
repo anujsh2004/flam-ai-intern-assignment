@@ -45,6 +45,13 @@ def test_clustered_interval_is_reported_alongside_iid(stats):
     assert set(ci) == {"article_clustered", "iid"}
 
 
+@pytest.mark.parametrize("path", [STATS, STATS.parent / "prepared" / "manifest.json"])
+def test_given_generated_json_when_written_then_line_endings_are_lf_on_every_os(path):
+    """Path.write_text translates '\\n' to '\\r\\n' on Windows; generated files
+    must be byte-identical across platforms."""
+    assert b"\r" not in path.read_bytes()
+
+
 def test_committed_stats_file_matches_fresh_computation(stats):
     """Guards against stale numbers in docs: stats.json must equal a recompute."""
     assert json.loads(STATS.read_text(encoding="utf-8")) == json.loads(json.dumps(stats))

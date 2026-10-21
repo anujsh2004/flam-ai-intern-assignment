@@ -104,7 +104,8 @@ def compute_stats() -> dict:
 
 def main() -> None:
     stats = compute_stats()
-    (HERE / "stats.json").write_text(json.dumps(stats, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    # newline="\n": without it Windows writes \r\n and the bytes differ per OS
+    (HERE / "stats.json").write_text(json.dumps(stats, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps(stats, indent=2, ensure_ascii=False))
 
 

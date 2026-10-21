@@ -71,7 +71,7 @@ def cfg_for(*argv):
 def test_given_v1_constant_then_it_is_the_single_source_of_corrected_defaults():
     import fertility_v1 as v1
 
-    assert v1.V1 == v1.replace(v1.V0, split="whitespace", lowercase=False, aggregate="total")
+    assert v1.V1 == v1.replace(v1.V0, split="whitespace", lowercase=False, aggregate="total", denominator="sentence")
     assert cfg_for() == v1.V1  # CLI with no fix flags = fully corrected
 
 
@@ -253,6 +253,67 @@ def test_f6_given_tiktoken_then_no_special_tokens_are_reported():
     import fertility_v1 as v1
 
     assert v1.load_tokenizer("gpt2").num_special_tokens == 0
+
+
+# F7/F8 corpus (one token per letter):  line      tokens words codepoints
+#                                      "abcdef"     6     1      6
+#                                      "ab cd"      4     2      5
+F7_CORPUS = ["abcdef", "ab cd"]
+
+
+def test_f7_given_v0_then_denominator_is_whitespace_words():
+    import fertility_v1 as v1
+
+    assert v1.V0.denominator == "words"
+    # line_mean of 6/1 and 4/2 = 4.0
+    assert v1.analyze(F7_CORPUS, one_token_per_letter, v1.V0)["fertility"] == pytest.approx(4.0)
+
+
+@pytest.mark.parametrize("aggregate", ["line_mean", "total"])
+def test_f7_given_sentence_denominator_then_tokens_per_parallel_sentence(aggregate):
+    import fertility_v1 as v1
+
+    cfg = v1.replace(v1.V0, denominator="sentence", aggregate=aggregate)
+    # (6 + 4) / 2 sentences = 5.0 under both aggregations (each line is one sentence)
+    assert v1.analyze(F7_CORPUS, one_token_per_letter, cfg)["fertility"] == pytest.approx(5.0)
+
+
+@pytest.mark.parametrize("denominator,expected", [
+    ("codepoints", 10 / 11), ("bytes", 10 / 11), ("graphemes", 10 / 11),  # ASCII: all equal
+])
+def test_f7_given_character_denominators_on_ascii_then_all_agree(denominator, expected):
+    import fertility_v1 as v1
+
+    cfg = v1.replace(v1.V0, denominator=denominator, aggregate="total")
+    assert v1.analyze(F7_CORPUS, one_token_per_letter, cfg)["fertility"] == pytest.approx(expected)
+
+
+@pytest.mark.parametrize("unit,expected", [("codepoints", 1.0), ("graphemes", 2.0), ("bytes", 1 / 3)])
+def test_f8_given_devanagari_when_char_unit_changes_then_tok_per_char_changes(unit, expected):
+    """नमस्ते: 6 code points, 3 grapheme clusters (Unicode 15.1), 18 UTF-8 bytes.
+    One token per code point -> 6 tokens. Same tokens, three different 'tok/char'."""
+    import fertility_v1 as v1
+
+    cfg = v1.replace(v1.V0, char_unit=unit)
+    assert v1.analyze(["नमस्ते"], list, cfg)["tok_per_char"] == pytest.approx(expected)
+
+
+def test_f7_f8_given_cli_flags_then_config_follows_and_v1_uses_sentences():
+    import fertility_v1 as v1
+
+    assert v1.V1.denominator == "sentence" and v1.V1.char_unit == "codepoints"
+    assert cfg_for("--v0", "--denominator", "sentence") == v1.replace(v1.V0, denominator="sentence")
+    assert cfg_for("--v0", "--char-unit", "bytes") == v1.replace(v1.V0, char_unit="bytes")
+
+
+@pytest.mark.gpt2
+def test_f7_given_sentence_denominator_when_run_as_cli_then_labels_say_tokens_per_sentence():
+    out = subprocess.run(
+        [sys.executable, str(ROOT / "partA" / "fertility_v1.py"), "--v0", "--denominator", "sentence",
+         "--corpus", f"eng={TOY / 'eng_sample.txt'}", "--corpus", f"hin={TOY / 'hin_sample.txt'}"],
+        capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    assert "tokens/sentence" in out and "fertility (tok/word)" not in out
+    assert "hin is" in out and "the tokens/sentence of eng" in out
 
 
 @pytest.mark.parametrize("spec,expected", [

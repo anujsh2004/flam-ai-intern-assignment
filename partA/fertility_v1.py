@@ -14,6 +14,8 @@ import unicodedata
 from dataclasses import dataclass, replace
 from pathlib import Path
 
+from units import count_bytes, count_graphemes  # A1's tested unit counters (partA/units.py)
+
 
 @dataclass(frozen=True)
 class Config:
@@ -34,12 +36,22 @@ class Config:
     # F6: False = exclude tokenizer-added special tokens (v0: add_special_tokens=False).
     #     True counts them (e.g. XLM-R <s> </s>) on every line.
     special_tokens: bool = False
+    # F7: unit the token count is divided by. "words" (v0) does not hold content
+    #     constant across languages; "sentence" = tokens per parallel sentence does
+    #     (provisional choice for V1; the single cost number is decided in A3, D-06).
+    denominator: str = "words"
+    # F8: unit for the tok/char column. "codepoints" (v0) means different things
+    #     in different scripts; graphemes/bytes show how much the unit choice moves it.
+    char_unit: str = "codepoints"
 
 
 V0 = Config()  # original fertility.py behaviour
-V1 = replace(V0, split="whitespace", lowercase=False, aggregate="total")  # fully corrected; single source of CLI defaults
+# fully corrected; the single source of CLI defaults
+V1 = replace(V0, split="whitespace", lowercase=False, aggregate="total", denominator="sentence")
 SPLITS = ("space", "whitespace")
 AGGREGATES = ("line_mean", "total")
+DENOMINATORS = ("words", "codepoints", "graphemes", "bytes", "sentence")
+CHAR_UNITS = ("codepoints", "graphemes", "bytes")
 
 
 def count_words(line: str, cfg: Config) -> int:
@@ -48,6 +60,20 @@ def count_words(line: str, cfg: Config) -> int:
     if cfg.split == "whitespace":
         return len(line.split())
     raise ValueError(f"unknown split mode {cfg.split!r}")
+
+
+def count_units(text: str, unit: str, cfg: Config) -> int:
+    if unit == "words":
+        return count_words(text, cfg)
+    if unit == "codepoints":
+        return len(text)
+    if unit == "graphemes":
+        return count_graphemes(text)
+    if unit == "bytes":
+        return count_bytes(text)
+    if unit == "sentence":  # each line is one parallel sentence
+        return 1
+    raise ValueError(f"unknown unit {unit!r}")
 
 
 def parse_tokenizer_spec(spec: str) -> tuple[str, str, str | None]:
@@ -116,10 +142,12 @@ def analyze(lines: list[str], encode, cfg: Config) -> dict:
     total_tokens = total_words = total_chars = 0
     for line in lines:
         line = measured_text(line, cfg)
-        n_tokens, n_words = count_tokens(line, encode, cfg), count_words(line, cfg)
+        n_tokens = count_tokens(line, encode, cfg)
+        n_words = count_units(line, cfg.denominator, cfg)  # "words" in v0
+        n_chars = count_units(line, cfg.char_unit, cfg)  # code points in v0
         per_line_fertility.append(n_tokens / n_words)
-        per_line_tpc.append(n_tokens / len(line))
-        total_tokens, total_words, total_chars = total_tokens + n_tokens, total_words + n_words, total_chars + len(line)
+        per_line_tpc.append(n_tokens / n_chars)
+        total_tokens, total_words, total_chars = total_tokens + n_tokens, total_words + n_words, total_chars + n_chars
     if cfg.aggregate == "line_mean":
         n = len(per_line_fertility)
         return {"fertility": sum(per_line_fertility) / n, "tok_per_char": sum(per_line_tpc) / n}
@@ -144,10 +172,14 @@ def build_parser() -> argparse.ArgumentParser:
                     help="F2: mean of per-line ratios or ratio of totals (V1: total)")
     ap.add_argument("--special-tokens", dest="special_tokens", action=argparse.BooleanOptionalAction, default=None,
                     help="F6: count tokenizer-added special tokens (V1: --no-special-tokens)")
+    ap.add_argument("--denominator", choices=DENOMINATORS, default=None,
+                    help="F7: unit the token count is divided by (V1: sentence)")
+    ap.add_argument("--char-unit", dest="char_unit", choices=CHAR_UNITS, default=None,
+                    help="F8: unit for the tok/char column (V1: codepoints)")
     return ap
 
 
-FIX_FLAGS = ("split", "lowercase", "nfc", "aggregate", "special_tokens")
+FIX_FLAGS = ("split", "lowercase", "nfc", "aggregate", "special_tokens", "denominator", "char_unit")
 
 
 def config_from_args(args) -> Config:
@@ -160,9 +192,14 @@ def main() -> None:
     args = build_parser().parse_args()
     cfg = config_from_args(args)
 
+    # labels follow the units; v0's units give the original wording exactly
+    label = "fertility (tok/word)" if cfg.denominator == "words" else f"tokens/{cfg.denominator}"
+    char_label = "tok/char" if cfg.char_unit == "codepoints" else f"tok/{cfg.char_unit}"
+    measure = "fertility" if cfg.denominator == "words" else f"tokens/{cfg.denominator}"
+
     encode = load_tokenizer(args.tokenizer)
     print(f"tokenizer: {args.tokenizer}")
-    print(f"{'lang':<8}{'fertility (tok/word)':>22}{'tok/char':>12}")
+    print(f"{'lang':<8}{label:>22}{char_label:>12}")
     print("-" * 42)
     results = {}
     for spec in args.corpus:
@@ -177,7 +214,7 @@ def main() -> None:
         print()
         for lang in langs[1:]:
             ratio = results[lang]["fertility"] / results[base]["fertility"]
-            print(f"{lang} is {ratio:.2f}x the fertility of {base} "
+            print(f"{lang} is {ratio:.2f}x the {measure} of {base} "
                   f"({'worse' if ratio > 1 else 'better'} tokenization)")
 
 

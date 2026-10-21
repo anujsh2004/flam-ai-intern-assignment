@@ -32,6 +32,9 @@ FINDINGS = {
     "F4": v1.replace(v1.V0, nfc=False),
     "F2": v1.replace(v1.V0, aggregate="total"),
     "F6": v1.replace(v1.V0, special_tokens=True),
+    "F7": v1.replace(v1.V0, denominator="sentence"),
+    "F8_graphemes": v1.replace(v1.V0, char_unit="graphemes"),
+    "F8_bytes": v1.replace(v1.V0, char_unit="bytes"),
 }
 
 

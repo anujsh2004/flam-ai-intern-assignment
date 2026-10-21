@@ -25,6 +25,7 @@ class Config:
 
 
 V0 = Config()  # original fertility.py behaviour
+V1 = replace(V0, split="whitespace")  # fully corrected; the single source of CLI defaults
 SPLITS = ("space", "whitespace")
 
 
@@ -78,15 +79,17 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
     ap.add_argument("--corpus", action="append", required=True, metavar="LANG=PATH")
     ap.add_argument("--tokenizer", default="gpt2")
-    ap.add_argument("--v0", action="store_true", help="reproduce the original script exactly (overrides other flags)")
-    ap.add_argument("--split", choices=SPLITS, default="whitespace", help="F1: word splitting")
+    ap.add_argument("--v0", action="store_true",
+                    help="start from the original behaviour (default start: corrected V1); fix flags then override")
+    # fix flags default to None = "keep the base value", so --v0 plus a flag isolates one fix
+    ap.add_argument("--split", choices=SPLITS, default=None, help="F1: word splitting (V1: whitespace)")
     return ap
 
 
 def config_from_args(args) -> Config:
-    if args.v0:
-        return V0
-    return Config(split=args.split)
+    base = V0 if args.v0 else V1
+    overrides = {name: getattr(args, name) for name in ("split",) if getattr(args, name) is not None}
+    return replace(base, **overrides)
 
 
 def main() -> None:

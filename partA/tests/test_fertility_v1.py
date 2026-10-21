@@ -61,6 +61,27 @@ def test_f1_given_whitespace_split_when_double_space_then_only_real_words_count(
     assert v1.analyze(["a  b"], one_token_per_word, cfg)["fertility"] == pytest.approx(1.0)
 
 
+def cfg_for(*argv):
+    import fertility_v1 as v1
+
+    return v1.config_from_args(v1.build_parser().parse_args(["--corpus", "x=y", *argv]))
+
+
+def test_given_v1_constant_then_it_is_the_single_source_of_corrected_defaults():
+    import fertility_v1 as v1
+
+    assert v1.V1 == v1.replace(v1.V0, split="whitespace")
+    assert cfg_for() == v1.V1  # CLI with no fix flags = fully corrected
+
+
+def test_given_v0_with_a_fix_flag_then_v0_is_the_base_and_the_flag_overrides():
+    import fertility_v1 as v1
+
+    assert cfg_for("--v0") == v1.V0
+    assert cfg_for("--v0", "--split", "whitespace") == v1.replace(v1.V0, split="whitespace")
+    assert cfg_for("--split", "space") == v1.replace(v1.V1, split="space")
+
+
 def test_f1_given_cli_split_flag_then_config_uses_it():
     import fertility_v1 as v1
 

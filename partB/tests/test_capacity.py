@@ -161,6 +161,17 @@ def test_b2_long_sweep_goodput_peaks_at_24_then_falls_exactly_when_preemption_st
     assert all(s["preempted_seqs"] == 0 for s in a["up_to_peak"])
 
 
+def test_b2_anomaly_is_judged_on_useful_tokens_not_the_reported_column():
+    """On the real log the two columns are proportional within a sweep (B3), so a mutant using
+    reported_tok_s is equivalent there. This pins the intent with rows where they disagree."""
+    from capacity import anomaly
+
+    base = {"prompt_len": 3584, "gen_len": 512, "ttft_ms_p50": 0, "itl_ms_p50": 0, "e2e_ms_p95": 0, "kv_cache_util": 0.5}
+    rows = [{**base, "batch_size": 8, "num_requests": 8, "wall_clock_s": 10.0, "reported_tok_s": 1.0, "preempted_seqs": 0},
+            {**base, "batch_size": 16, "num_requests": 16, "wall_clock_s": 40.0, "reported_tok_s": 9999.0, "preempted_seqs": 0}]
+    assert anomaly(rows)["peak_batch"] == 8  # goodput 409.6 vs 204.8; the reported column says otherwise
+
+
 def test_b2_option_a_cap_at_logged_non_preempting_batch_runs_48_as_two_waves():
     """Prediction grounded in a logged row: 48 requests = 2 waves of the observed b24 run."""
     from capacity import load_bench, option_a_cap
@@ -225,3 +236,12 @@ def test_given_crlf_csv_when_loaded_then_no_carriage_returns_leak_into_values(tm
                   b"12863.7,0,0.01\r\n")
     (row,) = load_bench(p)
     assert row["kv_cache_util"] == 0.01 and isinstance(row["preempted_seqs"], int)
+
+
+def test_given_committed_results_when_rebuilt_then_identical():
+    """Staleness guard: every Part B number in answers.md comes from results.json."""
+    import json
+
+    from capacity import OUT, build
+
+    assert json.loads(json.dumps(build())) == json.loads(OUT.read_text(encoding="utf-8"))

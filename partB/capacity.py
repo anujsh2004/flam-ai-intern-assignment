@@ -192,7 +192,47 @@ def timing_inconsistency(rows: list[dict]) -> list[dict]:
             for r in rows]
 
 
+OUT = HERE / "results.json"
+
+
+def build() -> dict:
+    rows = load_bench()
+    b24 = next(r for r in long_sweep(rows) if r["batch_size"] == 24)
+    b48 = next(r for r in long_sweep(rows) if r["batch_size"] == 48)
+    a = anomaly(rows)
+    return {
+        "b1": {"kv_bytes_per_token": kv_bytes_per_token(SPEC), "seq_bytes_4096": seq_bytes(SPEC),
+               "kv_budget_bytes": {c: kv_budget_bytes(SPEC, c) for c in GB},
+               "capacity_tokens": {c: kv_budget_bytes(SPEC, c) / kv_bytes_per_token(SPEC) for c in GB},
+               "convention_check": convention_check(rows, SPEC), "util_implied": util_implied_capacity(rows)},
+        "b3": {"formula": identify_reported_formula(rows), "goodput_b24_long": goodput_two_ways(b24),
+               "bounds_b24_long": goodput_bounds(b24),
+               "short_vs_long_goodput": {str(b): {"short": goodput(next(r for r in rows if r["batch_size"] == b and r["prompt_len"] == 512)),
+                                                  "long": goodput(next(r for r in long_sweep(rows) if r["batch_size"] == b))}
+                                         for b in (4, 8, 16, 32)},
+               "b48": {"reported_tok_s": b48["reported_tok_s"], "goodput": goodput(b48)},
+               "timing_inconsistency_rows": sum(t["e2e_p95_exceeds_wall"] for t in timing_inconsistency(rows))},
+        "b2": {"peak_batch": a["peak_batch"],
+               "long_sweep": [{k: s[k] for k in ("batch_size", "goodput", "wall_clock_s", "kv_cache_util", "preempted_seqs",
+                                                 "ttft_ms_p50", "e2e_ms_p95")} for s in a["up_to_peak"] + a["after_peak"]],
+               "option_a": option_a_cap(rows, 48, CHOSEN_CHANGE["cap"]), "option_b": option_b_fp8(rows, SPEC, 48),
+               "option_c": option_c_max_model_len(rows, SPEC, 2048), "chosen": CHOSEN_CHANGE},
+        "b4": b4_expectations(rows, CHOSEN_CHANGE["cap"]),
+    }
+
+
+def main() -> None:
+    import json
+
+    OUT.write_text(json.dumps(build(), indent=2) + "\n", encoding="utf-8", newline="\n")
+    print(f"wrote {OUT.relative_to(ROOT)}")
+
+
 def fit_from_preemption(rows: list[dict]) -> list[dict]:
     """At rows with preemption, the sequences that could stay resident = batch - preempted."""
     return [{"batch_size": r["batch_size"], "preempted_seqs": r["preempted_seqs"],
              "fit": r["batch_size"] - r["preempted_seqs"]} for r in rows if r["preempted_seqs"]]
+
+
+if __name__ == "__main__":
+    main()

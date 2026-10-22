@@ -29,7 +29,8 @@ def test_given_targeted_options_then_only_mutants_in_those_files_and_those_tests
     # by name prefix: picks A3 mutants across files without pulling in A2 mutants of the same file
     mutants, _ = select(parse_args(["--names", "A3", "--tests", "partA/tests/test_premium.py"]))
     assert mutants and all(name.startswith("A3") for name, _, _, _ in mutants)
-    assert {rel for _, rel, _, _ in mutants} == {"partA/analysis/premium.py", "partA/audit/experiments.py"}
+    assert {rel for _, rel, _, _ in mutants} == {"partA/analysis/premium.py", "partA/analysis/report.py",
+                                                 "partA/audit/experiments.py"}
 
 
 def test_given_failing_test_with_devanagari_output_when_run_then_counts_are_parsed(tmp_path, monkeypatch):

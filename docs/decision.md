@@ -132,6 +132,7 @@ Sources must be real and read; none are cited yet. Where X/Twitter or articles a
 
 ## D-09 GB vs GiB and budget formula for B1 — Open
 - `gpu_memory_utilization` 0.92 of 24 GB; weights 4.2B x 2 B; overhead 1.6 GB. Whether "24 GB" means 24e9 or 24 GiB changes the sequence count by ~1; answer must state the convention and show both. Check against the log (`preempted_seqs` begins at batch 32; `kv_cache_util` 0.93 at batch 24). Status: **Open — resolve in Phase 5 (Part B) with tests.**
+- **Approach (user-agreed 2026-10-23):** compute capacity under both conventions, and let the log decide via two independent checks: utilisation-implied capacity at non-preempting rows, and batch − preempted at preempting rows. Ambiguity to state: whether "1.6 GB" overhead is decimal or binary; it is reported as written.
 
 ## D-10 Work order: Part A before B and C — Decided (user recommendation)
 - **Alternatives:** B first (small, deterministic) vs A first.

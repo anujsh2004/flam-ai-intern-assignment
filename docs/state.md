@@ -22,7 +22,10 @@ Phase 3 — **A3 is complete** on branch `part-a-analysis` (from `main` at `c155
   - targeted A3 mutation **12/12** (D-19);
   - bootstrap cross-checked against A1's;
   - 28 evidence IDs verified by a test.
-- **Final gate still owed (D-19):** one full mutation run before submission.
+- **Final full mutation run:** waived by the user (D-19, risk accepted).
+- **Sarvam-1:** not needed.
+- **Merge:** approved.
+- **Why kan/tam are costlier:** Llama-3 vocabulary coverage. 98.1% / 89.2% of their tokens are byte fragments vs 0.2% for Hindi (to be committed as a script in A4).
 
 ## A2 (complete, merged into `main` at `c155ad7`)
 

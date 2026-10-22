@@ -132,8 +132,9 @@ To-do:
 - [x] 5. `analysis/report.py` -> `A3_results.md`, with a staleness test
 - [x] 6. `A3_analysis.md` with evidence index + test (negative check passes)
 - [x] 7. Mutation: **targeted** run on A3 code (user decision, D-19): 12/12. Full run deferred to the final gate.
-- [ ] 8. Docs; merge to `main` after approval
-- [ ] **Final gate before submission:** one full `python partA/audit/mutation_check.py` run (D-19).
+- [x] 8. Docs; merge into `main` approved by the user (2026-10-22)
+- ~~Final gate: full mutation run~~ **waived by the user** (D-19, risk accepted)
+- Carry to A4: commit the vocabulary-coverage measurement (why kan/tam are costlier) as a tested script.
 
 ### Phase 4 — A4 memo — branch `part-a-memo`: 1 page, numbers pulled from generated results.
 

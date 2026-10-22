@@ -368,4 +368,18 @@ They reuse A1's tested `units.py`, so nothing is reimplemented. Built test-first
 - All closed: 10/10, then 12/12 with the report mutants.
 - My first targeting attempt selected by file and dragged in A2's slow mutants; I stopped it and selected by name.
 
+**Why the Dravidian premiums are higher (user question; quick measurement, to be committed as a script in A4).**
+- Llama-3.2-3B over all FLORES text:
+
+  | lang | code points vs eng | tokens per code point | byte-fragment tokens |
+  |---|---|---|---|
+  | eng | 1.00 | 0.21 | 0.0% |
+  | hin | 1.00 | 0.52 | 0.2% |
+  | kan | 1.05 | **1.74** | **98.1%** |
+  | tam | 1.17 | **1.35** | **89.2%** |
+
+- Byte-fragment = the token does not decode to whole characters.
+- Length explains little. **Vocabulary coverage** explains most: the Llama-3 vocabulary has Devanagari pieces (Hindi is officially supported) but almost none for Kannada/Tamil, so they fall back to UTF-8 bytes.
+- The same Kannada text is 1.10× under IndicBERT, so the cause is the vocabulary, not the script.
+
 **Write-up.** `A3_analysis.md` has an evidence index of 28 IDs, verified by a test. Negative check: a changed value (A4 8.87 -> 8.88) and a missing ID (A99) both fail.

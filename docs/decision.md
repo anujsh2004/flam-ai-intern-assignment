@@ -208,6 +208,9 @@ Scope: script and metric (F1–F9), plus an audit of REPORT_v0 §1 claims in `pa
   | `sarvamai/sarvam-1` | ungated, but **"Sarvam non-commercial license"** | Generative Indic LM; vendor claims fertility 1.4–2.1 |
 
   Sarvam-1 is the most decision-relevant comparator (a generative Indic model, the report's "route to an Indic model" option). It was not used because of its non-commercial licence in a company hiring context. It can be added if the user decides the licence is fine for this use.
+  - **Final (user, 2026-10-22):** Sarvam-1 is **not needed**. A3 meets the brief with 4 tokenizers (XLM-R multilingual, IndicBERT v2 Indic-specific). The A4 memo names it as an untested routing option.
+  - **Why not AI4Bharat IndicConformer (user question):** HF `pipeline_tag=automatic-speech-recognition` (and gated). Its tokenizer serves speech transcripts, not LLM text, so it is irrelevant to serving cost.
+  - **Why not IndicTrans2:** a translation model (`pipeline_tag=translation`, gated). A valid second Indic reference, but gated and translation-specific; no better a serving proxy than IndicBERT.
 - **IndicBERT v2 verified by measurement:**
   - pinned `8598f13fe52443bc3fc054fcd665944560145b5c`; vocab 250,000; 2 special tokens per sequence;
   - no normaliser (cased, no NFC);
@@ -227,6 +230,12 @@ Scope: script and metric (F1–F9), plus an audit of REPORT_v0 §1 claims in `pa
 - **Choice:** (b), on user request. A3 changes no A2 logic, and the A2 modules it imports passed a full 50/50 run. The normal full suite still gates every commit.
 - **What it misses:** test gaps that span modules (e.g. the A2 inverted-skip mutant lived in `conftest.py`).
 - **Mitigation:** one full run as the final gate before submission.
+- **Update (user, 2026-10-22): final full run WAIVED, risk accepted.** Reasoning shown to the user:
+  - the full suite (242 tests, incl. re-derivation of every committed number) gated every commit;
+  - the A2 code is unchanged since its 50/50 full run;
+  - the A3 code passed its targeted 12/12.
+
+  The residual risk concerns test-suite strength across modules, not the correctness of any reported number.
 - **Evidence it still finds real gaps:** the first targeted run found 3 survivors (seed use, lowercasing, article-id format; the last an equivalent mutant on this data, with 0 URLs in both splits). All were closed: 10/10, then 12/12 with the report mutants.
 - **Lesson:** my first targeting selected by *file*, which pulled in all of the A2 mutants in `experiments.py` and their slow tests. I stopped it and switched to selection by name.
 

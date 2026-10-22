@@ -51,6 +51,21 @@ def test_given_sentence_unit_when_bootstrapped_then_equals_a1_clustered_bootstra
         cluster_bootstrap_ratio(hin_t, eng_t, clusters, n_boot=500, seed=3))
 
 
+def test_given_many_articles_when_bootstrapped_then_seed_makes_the_interval_reproducible():
+    """Mutation gap: with 4 clusters every seed gives the same percentiles, so seed use was untested."""
+    import random
+
+    from analysis.premium import bootstrap_premium
+
+    gen = random.Random(42)
+    eng = [{"tokens": gen.randint(5, 40), "sentence": 1} for _ in range(300)]
+    hin = [{"tokens": gen.randint(5, 90), "sentence": 1} for _ in range(300)]
+    clusters = [i // 3 for i in range(300)]  # 100 articles of 3 sentences
+    a = bootstrap_premium(hin, eng, "sentence", clusters, n_boot=400, seed=7)
+    assert a == bootstrap_premium(hin, eng, "sentence", clusters, n_boot=400, seed=7)
+    assert a[1:] != bootstrap_premium(hin, eng, "sentence", clusters, n_boot=400, seed=8)[1:]
+
+
 def test_given_per_sentence_premiums_when_summarised_then_linear_percentiles():
     from analysis.premium import spread
 
@@ -70,12 +85,28 @@ def test_given_line_when_tabulated_then_counts_follow_v1_preparation():
     assert rows[1]["codepoints"] == 2 and rows[1]["graphemes"] == 1 and rows[1]["bytes"] == 6
 
 
+def test_given_capitals_when_tabulated_then_served_text_is_tokenized_not_lowercased():
+    """Mutation gap: a case-blind fake tokenizer could not see lowercasing (A2/F3)."""
+    import re
+
+    import fertility_v1 as v1
+    from analysis.premium import sentence_table
+
+    def case_sensitive(s):
+        return re.findall(r"[A-Z]|[a-z]+|\S", s)
+
+    assert sentence_table(case_sensitive, ["NASA x"], v1.V1)[0]["tokens"] == 5  # N A S A x
+
+
 def test_registry_lists_four_pinned_tokenizers_incl_indicbert():
     from analysis.premium import TOKENIZERS
     from audit.experiments import INDICBERT, LLAMA, XLMR
 
     assert TOKENIZERS == {"gpt2": "gpt2", "llama": LLAMA, "xlmr": XLMR, "indicbert": INDICBERT}
     assert INDICBERT == "hf:ai4bharat/IndicBERTv2-MLM-only@8598f13fe52443bc3fc054fcd665944560145b5c"
+    from audit.experiments import result_filename
+
+    assert result_filename("F3", INDICBERT) == "F3_indicbert.json"  # short, Windows-safe label
 
 
 @pytest.mark.flores
@@ -84,6 +115,9 @@ def test_given_flores_when_articles_loaded_then_one_id_per_sentence_and_562_arti
 
     ids = article_ids()
     assert len(ids) == 2009 and len(set(ids)) == 562  # A1: 281 + 281 articles
+    # same "split:URL" ids as A1's stats.py, so A1 and A3 cluster identically. On this data no URL
+    # is in both splits (measured: 0), so dropping the prefix would be an equivalent mutant.
+    assert ids[0].startswith("dev:") and ids[-1].startswith("devtest:")
 
 
 @pytest.mark.flores

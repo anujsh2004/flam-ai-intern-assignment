@@ -45,11 +45,37 @@ Each task: write test/BDD scenario -> see it fail -> implement -> pass -> log in
 
 ### Phase 5 — B capacity reconciliation — branch `part-b-capacity`
 Dependencies: none (only `bench/`). Moved after Part A per user recommendation: A has the longest dependency chain (A1->A3) and the network/install risk, so it goes first; B/C do not depend on A.
-- B1: `partB/kv_capacity.py` + tests: bytes/token, per-seq bytes, budget -> max seqs; compare with `preempted_seqs`/`kv_cache_util`.
-- B3: test that `reported_tok_s` formula is identified from the CSV (hypothesis H-B1); goodput two ways (output tokens / wall-clock; per-request rate x requests).
-- B2: identify anomaly rows (24 -> 32 -> 48), mechanism via `preempted_seqs`, `kv_cache_util`, `itl_ms_p50`, `wall_clock_s`; propose change with numeric prediction.
-- B4: one metric + expected value.
-- Acceptance: every number reproducible by one command; tests pass; answers in `partB/answers.md`.
+Pre-registered 2026-10-23 with the user, **before any Part B computation**.
+- **Files:** `partB/capacity.py` (code), `partB/answers.md` (write-up, evidence IDs verified by a test), `partB/results.json` (generated, staleness test). The bench log is CRLF in the original kit, so the loader must handle it (D-12).
+- **B1:**
+  - KV bytes/token = 2 (K, V) × layers × KV heads × head_dim × bytes/element, exactly.
+  - Per 4096-token sequence, then max concurrent sequences = (total × gpu_memory_utilization − weights − overhead) / per-seq bytes.
+  - **Both conventions reported** (24 GB = 24e9 and 24 GiB = 24·2³⁰). **The log decides which is right** (D-09, user-agreed).
+  - Two independent log checks: (i) capacity implied by `kv_cache_util` at non-preempting rows; (ii) sequences that fit = batch − `preempted_seqs` at preempting rows.
+- **B3:**
+  - Test, on every row, that `reported_tok_s` = (prompt_len + gen_len) × num_requests / wall_clock_s.
+  - Goodput two independent ways (user-agreed): (1) generated tokens / wall-clock; (2) per-request timing from other columns, TTFT + (gen − 1) × ITL. The reported-column relation is shown only as a consistency check, being algebraically the same as (1).
+  - Then refute "longer prompts → better throughput" and "batch 48 ≈ 3200 tok/s".
+- **B2:** identify the anomaly from specific rows and columns and explain the mechanism. **Evaluate all three candidate changes with one method** (user decision):
+  - (a) cap max concurrent sequences at what fits;
+  - (b) fp8 KV cache;
+  - (c) lower `max_model_len`.
+
+  These are **predictions** from the log and spec, not measurements (no GPU).
+  - **Ranking criteria, user-ordered:** (1) performance *and* correctness: goodput, no output-quality risk, prediction grounded in logged data; (2) tail latency (e2e p95); (3) ease of deployment.
+  - **The user chooses** the change the memo proposes.
+- **B4:** one serving counter that confirms the B2 mechanism, with expected values per row.
+- **Process (user-agreed for the remaining parts):** TDD; small commits; the relevant tests before each commit; the full suite before the merge; a targeted mutation check on Part B code. Ask the user at every decision point. Merge locally; no push until the user says.
+
+To-do:
+- [x] 1. Pre-registration (`c3bdd80`)
+- [x] 2. Loader, in `capacity.py` (`6a40b81`)
+- [x] 3. B1 (`0f32c66`): decimal GB supported by the log
+- [x] 4. B3 (`39cba3d`, `4c86038`): goodput 200.92 / 200.93 (user choice B)
+- [x] 5. B2 (`1a5c119`): **user chose (a) cap 24, with (b) fp8 KV as the follow-up**
+- [x] 6. B4 (`7521736`)
+- [x] 7. `results.json` + `answers.md` (`d54974f`); checker covers Part B, targeted 10/10 (`0d6ec1e`)
+- [ ] 8. Docs; full suite; local merge **after user approval**
 
 ### Phase 1 — A1 corpus — branch `part-a-corpus`
 Dependency: network/dataset access (verified). Source: FLORES-200 dev+devtest, 4 languages eng/hin/kan/tam (D-03, user-confirmed).

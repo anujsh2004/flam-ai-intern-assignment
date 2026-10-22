@@ -126,6 +126,28 @@ MUTANTS = [
      'return f"{point:.3f} [{lo:.3f}, {hi:.3f}]"', 'return f"{point:.3f} [{lo:.3f}, {lo:.3f}]"'),
     ("A3 report overhead column shows the plain premium", "partA/analysis/report.py",
      "{t['premium_with_overhead'][l][0]:.3f}\" for l in LANGS", "{t['premium'][l]['sentence'][0]:.3f}\" for l in LANGS"),
+    # --- Part B (partB/capacity.py); run with --names "B:" --tests partB/tests/... ---
+    ("B: KV bytes drop the K,V factor 2", "partB/capacity.py",
+     'return 2 * spec["layers"] * spec["kv_heads"]', 'return spec["layers"] * spec["kv_heads"]'),
+    ("B: KV budget ignores the weights", "partB/capacity.py",
+     '* spec["gpu_memory_utilization"] - weights - spec["overhead_gb"] * unit',
+     '* spec["gpu_memory_utilization"] - spec["overhead_gb"] * unit'),
+    ("B: util intervals unioned instead of intersected", "partB/capacity.py",
+     'lo, hi = max(c["lo"] for c in caps), min(c["hi"] for c in caps)',
+     'lo, hi = min(c["lo"] for c in caps), max(c["hi"] for c in caps)'),
+    ("B: goodput counts prompt tokens", "partB/capacity.py",
+     'return r["gen_len"] * r["num_requests"] / r["wall_clock_s"]',
+     'return (r["prompt_len"] + r["gen_len"]) * r["num_requests"] / r["wall_clock_s"]'),
+    ("B: option a runs the burst as one wave", "partB/capacity.py", "waves = -(-requests // cap)", "waves = 1"),
+    ("B: option b keeps fp16 KV", "partB/capacity.py", 'fp8 = {**spec, "bytes_per_elem": 1}', "fp8 = {**spec}"),
+    ("B: anomaly peak taken from the inflated column", "partB/capacity.py",
+     'max(sweep, key=lambda s: s["goodput"])', 'max(sweep, key=lambda s: s["reported_tok_s"])'),
+    ("B: formula tolerance made meaningless", "partB/capacity.py",
+     'tol = 0.05 + pred * 0.005 / r["wall_clock_s"]', "tol = 1e9"),
+    ("B: loader keeps strings", "partB/capacity.py",
+     "int(v) if k in INT_COLS else float(v)", "v"),
+    ("B: cap promise ignores what fits", "partB/capacity.py",
+     '0 if cap <= min(f["fit"] for f in fit_from_preemption(rows)) else None', "0"),
     ("A3 IndicBERT label missing", "partA/audit/experiments.py",
      'LLAMA: "llama", INDICBERT: "indicbert"}', 'LLAMA: "llama"}'),
     ("v0 SHA-256 guard disabled", "partA/audit/v0.py", "if got != V0_SHA256:", "if False:"),
@@ -180,6 +202,8 @@ def main(argv=None) -> int:
         shutil.copytree(ROOT / "partA", work / "partA",
                         ignore=shutil.ignore_patterns("raw", "__pycache__", ".pytest_cache"))
         shutil.copytree(ROOT / "starter_kit", work / "starter_kit")
+        if (ROOT / "partB").exists():  # Part B mutants and tests live there
+            shutil.copytree(ROOT / "partB", work / "partB", ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache"))
         code, baseline = run_tests(work, tests)
         print(f"baseline: exit {code}, {baseline} passed ({len(mutants)} mutants, {len(tests)} test files)")
         if code != 0:

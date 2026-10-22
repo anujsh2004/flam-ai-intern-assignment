@@ -382,4 +382,41 @@ They reuse A1's tested `units.py`, so nothing is reimplemented. Built test-first
 - Length explains little. **Vocabulary coverage** explains most: the Llama-3 vocabulary has Devanagari pieces (Hindi is officially supported) but almost none for Kannada/Tamil, so they fall back to UTF-8 bytes.
 - The same Kannada text is 1.10× under IndicBERT, so the cause is the vocabulary, not the script.
 
-**Write-up.** `A3_analysis.md` has an evidence index of 28 IDs, verified by a test. Negative check: a changed value (A4 8.87 -> 8.88) and a missing ID (A99) both fail.
+**Write-up.** `A3_analysis.md` has an evidence index of 28 IDs, verified by a test.
+
+## 2026-10-23 — Part B: capacity reconciliation
+
+**Pre-registered first** (`c3bdd80`): both GB conventions with the log deciding; goodput two ways; all three B2 changes evaluated, with the user choosing. Lighter process (user-agreed): relevant tests per commit, full suite before the merge, targeted mutation.
+
+**B1.**
+- 2·28·8·128·2 = **114,688 B/token**; a 4096-token sequence = 469,762,048 B.
+- Budget 24e9·0.92 − 8.4e9 − 1.6e9 = 12.08e9 B = 105,329 tokens = **25.72 sequences**; binary GiB gives 28.93.
+- **The log decides, two independent ways:**
+  - the util-implied capacity intervals of 7 rows intersect at [105,138, 105,703] tokens, which contains decimal and excludes binary;
+  - batch − preempted = **25** at both b32 and b48 = ⌊25.72⌋.
+- **Decimal GB supported.**
+
+**B3.**
+- `reported_tok_s` = (prompt + gen) × N / wall on **13/13** rows; generated-only on 0. The column counts the user's prompt as throughput.
+- **Surprise found while checking the approved second method:** `e2e_ms_p95` exceeds the run's wall clock on **12/13** rows (b1: one request "takes" 12.86 s in a 10.94 s run). The latency and wall-clock columns do not share a start point, so a TTFT + ITL estimate (247.8) only brackets goodput.
+- Brought to the user; they chose option B: the wall clock (200.92) plus the reported column × gen share (200.93), which agree.
+- **Refutations:**
+  - long prompts give *lower* goodput at every shared batch (b16: 163.9 vs 294.5);
+  - b48 = 162.3 useful tok/s (reported 1298.5), below b24, nowhere near 3200.
+- **My slip:** one hand-derived test used b16's TTFT (498.3) for the b24 row (500.5). The test failed, I checked the row, and fixed the *test*, not the code.
+
+**B2.**
+- Goodput peaks at **b24 (200.9)** and falls at b32 (173.0) and b48 (162.3), exactly when preemption starts (7, 23) at util 0.97. Wall clock goes 61 -> 95 -> 151 s; TTFT p50 500 -> 955 ms. Mechanism: KV exhaustion -> preemption -> recomputed prefills.
+- **Three changes, one method:**
+  - (a) cap 24 = 2 waves of the logged b24 run: 200.9 tok/s (+23.8%), no quality risk, worse tail;
+  - (b) fp8 KV: 51.4 sequences fit; a line through b4–b24 extended to b48 gives 244.5 (+50.6%), but it is an extrapolation and quality is unmeasured;
+  - (c) `max_model_len`: no help (capacity is in tokens; 4096-token requests would be rejected).
+- **The user chose (a) at 24, with (b) as the follow-up experiment** (D-20).
+
+**B4.** `vllm:num_preemptions_total`: expected ≥ 0, 0, 0, 0, 7, 23 across the long sweep, and 0 for the 48-burst under the cap.
+- **My slip:** the first version compared the cap with itself, so it was always 0. Rewritten against the 25 that fit, with a test that a cap of 30 cannot promise 0.
+
+**Verification.**
+- 44 evidence IDs in `answers.md` are checked against `results.json`.
+- **Mutation-checker gap found:** it copied only `partA/`, so Part B could never be mutated. Fixed.
+- Targeted Part B run: 9/10 at first. The survivor, "anomaly peak from the reported column", is **equivalent on the real log**: within one prompt-length sweep the reported column is exactly 8× goodput. It is pinned by an intent test with synthetic rows where the two disagree. Result: **10/10**. Negative check: a changed value (A4 8.87 -> 8.88) and a missing ID (A99) both fail.

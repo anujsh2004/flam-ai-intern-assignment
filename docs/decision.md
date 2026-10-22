@@ -132,6 +132,7 @@ Sources must be real and read; none are cited yet. Where X/Twitter or articles a
 
 ## D-09 GB vs GiB and budget formula for B1 — Open
 - `gpu_memory_utilization` 0.92 of 24 GB; weights 4.2B x 2 B; overhead 1.6 GB. Whether "24 GB" means 24e9 or 24 GiB changes the sequence count by ~1; answer must state the convention and show both. Check against the log (`preempted_seqs` begins at batch 32; `kv_cache_util` 0.93 at batch 24). Status: **Open — resolve in Phase 5 (Part B) with tests.**
+- **Approach (user-agreed 2026-10-23):** compute capacity under both conventions, and let the log decide via two independent checks: utilisation-implied capacity at non-preempting rows, and batch − preempted at preempting rows. Ambiguity to state: whether "1.6 GB" overhead is decimal or binary; it is reported as written.
 
 ## D-10 Work order: Part A before B and C — Decided (user recommendation)
 - **Alternatives:** B first (small, deterministic) vs A first.
@@ -238,6 +239,16 @@ Scope: script and metric (F1–F9), plus an audit of REPORT_v0 §1 claims in `pa
   The residual risk concerns test-suite strength across modules, not the correctness of any reported number.
 - **Evidence it still finds real gaps:** the first targeted run found 3 survivors (seed use, lowercasing, article-id format; the last an equivalent mutant on this data, with 0 URLs in both splits). All were closed: 10/10, then 12/12 with the report mutants.
 - **Lesson:** my first targeting selected by *file*, which pulled in all of the A2 mutants in `experiments.py` and their slow tests. I stopped it and switched to selection by name.
+
+## D-20 Part B — proposed change and the second goodput method — Decided (user, 2026-10-23)
+- **B3 second goodput method: option B.**
+  - **Problem:** the latency columns run on a different clock from `wall_clock_s` (`e2e_ms_p95` exceeds it on 12/13 rows), so TTFT + ITL estimates only *bracket* goodput (177.5–247.8 tok/s).
+  - **Chosen pair:** generated tokens / wall clock (200.92), and the separately logged `reported_tok_s` × gen share (200.93).
+- **B2 change: (a) cap concurrent sequences at 24**, with **(b) fp8 KV as the follow-up experiment**. Evaluated with one method and ranked on the user's criteria:
+  - **(a) is grounded in a logged run:** 2 waves of the b24 row, +23.8% goodput, no quality risk; tail latency worse.
+  - **(b) has the bigger predicted gain** (+50.6%) but is an extrapolation to 2× the largest observed batch, with quality unmeasured.
+  - **(c) cannot help:** paged KV capacity is in tokens, and the 4096-token requests would be rejected.
+- **Why 24, not 25:** 24 is the largest batch logged with zero preemption, so the prediction rests on data.
 
 ## D-17 F9 classification and the FLM-4B proxy — Decided (user rule, 2026-10-21)
 - **Classification:** REPORT_v0 says "Serving Hindi will cost **us**", meaning our model (FLM-4B). By the user's rule, measuring it with gpt2 is a **conceptual flaw**.

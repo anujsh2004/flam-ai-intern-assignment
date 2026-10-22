@@ -1,0 +1,258 @@
+{
+  "b1": {
+    "kv_bytes_per_token": 114688,
+    "seq_bytes_4096": 469762048,
+    "kv_budget_bytes": {
+      "decimal": 12080000000.0,
+      "binary": 13590232555.520002
+    },
+    "capacity_tokens": {
+      "decimal": 105329.24107142857,
+      "binary": 118497.42392857144
+    },
+    "convention_check": {
+      "util_interval_tokens": [
+        105137.9679144385,
+        105703.22580645162
+      ],
+      "fits_at_preemption": [
+        25
+      ],
+      "max_concurrent": {
+        "decimal": 25.71514674595424,
+        "binary": 28.930035138811387
+      },
+      "passes": {
+        "decimal": true,
+        "binary": false
+      },
+      "supported": "decimal"
+    },
+    "util_implied": [
+      {
+        "batch_size": 16,
+        "prompt_len": 512,
+        "preempted_seqs": 0,
+        "tokens_resident": 12288,
+        "capacity_tokens": 102400.0,
+        "lo": 98304.0,
+        "hi": 106852.17391304349
+      },
+      {
+        "batch_size": 32,
+        "prompt_len": 512,
+        "preempted_seqs": 0,
+        "tokens_resident": 24576,
+        "capacity_tokens": 106852.17391304347,
+        "lo": 104578.72340425532,
+        "hi": 109226.66666666666
+      },
+      {
+        "batch_size": 64,
+        "prompt_len": 512,
+        "preempted_seqs": 0,
+        "tokens_resident": 49152,
+        "capacity_tokens": 104578.72340425533,
+        "lo": 103477.8947368421,
+        "hi": 105703.22580645162
+      },
+      {
+        "batch_size": 4,
+        "prompt_len": 3584,
+        "preempted_seqs": 0,
+        "tokens_resident": 16384,
+        "capacity_tokens": 102400.0,
+        "lo": 99296.9696969697,
+        "hi": 105703.22580645162
+      },
+      {
+        "batch_size": 8,
+        "prompt_len": 3584,
+        "preempted_seqs": 0,
+        "tokens_resident": 32768,
+        "capacity_tokens": 105703.22580645162,
+        "lo": 104025.39682539682,
+        "hi": 107436.0655737705
+      },
+      {
+        "batch_size": 16,
+        "prompt_len": 3584,
+        "preempted_seqs": 0,
+        "tokens_resident": 65536,
+        "capacity_tokens": 105703.22580645162,
+        "lo": 104857.6,
+        "hi": 106562.60162601626
+      },
+      {
+        "batch_size": 24,
+        "prompt_len": 3584,
+        "preempted_seqs": 0,
+        "tokens_resident": 98304,
+        "capacity_tokens": 105703.2258064516,
+        "lo": 105137.9679144385,
+        "hi": 106274.59459459459
+      }
+    ]
+  },
+  "b3": {
+    "formula": {
+      "prompt_plus_gen": {
+        "rows_matching": 13,
+        "rows": 13
+      },
+      "gen_only": {
+        "rows_matching": 0,
+        "rows": 13
+      }
+    },
+    "goodput_b24_long": {
+      "from_wall_clock": 200.91563113145847,
+      "from_reported_column": 200.925
+    },
+    "bounds_b24_long": {
+      "from_p50_ttft_itl": 247.7805512834964,
+      "from_e2e_p95": 177.51761379806504
+    },
+    "short_vs_long_goodput": {
+      "4": {
+        "short": 87.00084961767205,
+        "long": 70.66942719116632
+      },
+      "8": {
+        "short": 165.16129032258064,
+        "long": 112.8374655647383
+      },
+      "16": {
+        "short": 294.4644140905823,
+        "long": 163.9383630178107
+      },
+      "32": {
+        "short": 496.4848484848485,
+        "long": 172.99123640587055
+      }
+    },
+    "b48": {
+      "reported_tok_s": 1298.5,
+      "goodput": 162.31424608678424
+    },
+    "timing_inconsistency_rows": 12
+  },
+  "b2": {
+    "peak_batch": 24,
+    "long_sweep": [
+      {
+        "batch_size": 4,
+        "goodput": 70.66942719116632,
+        "wall_clock_s": 28.98,
+        "kv_cache_util": 0.16,
+        "preempted_seqs": 0,
+        "ttft_ms_p50": 483.2,
+        "e2e_ms_p95": 32673.3
+      },
+      {
+        "batch_size": 8,
+        "goodput": 112.8374655647383,
+        "wall_clock_s": 36.3,
+        "kv_cache_util": 0.31,
+        "preempted_seqs": 0,
+        "ttft_ms_p50": 519.0,
+        "e2e_ms_p95": 39982.9
+      },
+      {
+        "batch_size": 16,
+        "goodput": 163.9383630178107,
+        "wall_clock_s": 49.97,
+        "kv_cache_util": 0.62,
+        "preempted_seqs": 0,
+        "ttft_ms_p50": 498.3,
+        "e2e_ms_p95": 54602.1
+      },
+      {
+        "batch_size": 24,
+        "goodput": 200.91563113145847,
+        "wall_clock_s": 61.16,
+        "kv_cache_util": 0.93,
+        "preempted_seqs": 0,
+        "ttft_ms_p50": 500.5,
+        "e2e_ms_p95": 69221.3
+      },
+      {
+        "batch_size": 32,
+        "goodput": 172.99123640587055,
+        "wall_clock_s": 94.71,
+        "kv_cache_util": 0.97,
+        "preempted_seqs": 7,
+        "ttft_ms_p50": 636.9,
+        "e2e_ms_p95": 97465.7
+      },
+      {
+        "batch_size": 48,
+        "goodput": 162.31424608678424,
+        "wall_clock_s": 151.41,
+        "kv_cache_util": 0.97,
+        "preempted_seqs": 23,
+        "ttft_ms_p50": 955.4,
+        "e2e_ms_p95": 105427.5
+      }
+    ],
+    "option_a": {
+      "cap": 24,
+      "waves": 2,
+      "wall_s": 122.32,
+      "goodput": 200.91563113145847,
+      "observed_goodput": 162.31424608678424,
+      "vs_observed_pct": 23.78188358404185,
+      "basis": "logged b24 row x 2"
+    },
+    "option_b": {
+      "kv_bytes_per_token": 57344,
+      "max_concurrent": 51.43029349190848,
+      "fits": true,
+      "wall_s": 100.51033898305084,
+      "goodput": 244.51215913364172,
+      "vs_observed_pct": 50.64121913421504,
+      "basis": "extrapolated line through b4..b24 to b48"
+    },
+    "option_c": {
+      "new_max_model_len": 2048,
+      "capacity_tokens_unchanged": true,
+      "long_requests_rejected": 48,
+      "goodput": 0
+    },
+    "chosen": {
+      "propose": "a",
+      "cap": 24,
+      "follow_up_experiment": "b"
+    }
+  },
+  "b4": {
+    "counter": "vllm:num_preemptions_total",
+    "long_sweep": [
+      {
+        "batch_size": 4,
+        "expected_min": 0
+      },
+      {
+        "batch_size": 8,
+        "expected_min": 0
+      },
+      {
+        "batch_size": 16,
+        "expected_min": 0
+      },
+      {
+        "batch_size": 24,
+        "expected_min": 0
+      },
+      {
+        "batch_size": 32,
+        "expected_min": 7
+      },
+      {
+        "batch_size": 48,
+        "expected_min": 23
+      }
+    ],
+    "after_cap_48_request_burst": 0
+  }
+}

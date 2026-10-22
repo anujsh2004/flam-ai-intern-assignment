@@ -105,6 +105,52 @@ def test_b3_e2e_p95_exceeds_the_run_wall_clock_on_12_of_13_rows():
     assert (b1["batch_size"], b1["wall_s"], b1["e2e_p95_s"]) == (1, 10.94, pytest.approx(12.8637))
 
 
+def row(rows, batch, prompt):
+    return next(r for r in rows if r["batch_size"] == batch and r["prompt_len"] == prompt)
+
+
+def test_b3_goodput_of_batch24_long_row_two_independent_ways_agree():
+    """User choice B: (1) generated tokens / wall clock; (2) the separately logged reported
+    column scaled to generated tokens. Agreement within the log's rounding."""
+    from capacity import goodput_two_ways, load_bench
+
+    g = goodput_two_ways(row(load_bench(), 24, 3584))
+    assert g["from_wall_clock"] == pytest.approx(24 * 512 / 61.16)  # 200.92 tok/s
+    assert g["from_reported_column"] == pytest.approx(1607.4 * 512 / (3584 + 512))  # 200.93 tok/s
+    assert abs(g["from_wall_clock"] - g["from_reported_column"]) < 0.05 * 512 / 4096 + 0.02
+
+
+def test_b3_latency_column_estimates_only_bracket_the_goodput():
+    from capacity import goodput_bounds, load_bench
+
+    b = goodput_bounds(row(load_bench(), 24, 3584))
+    assert b["from_p50_ttft_itl"] == pytest.approx(24 * 512 / ((500.5 + 511 * 96.07) / 1000))  # ~247.8 (b24 TTFT 500.5)
+    assert b["from_e2e_p95"] == pytest.approx(24 * 512 / 69.2213)  # ~177.5
+    assert b["from_e2e_p95"] < 24 * 512 / 61.16 < b["from_p50_ttft_itl"]
+
+
+def test_b3_longer_prompts_give_lower_goodput_at_every_shared_batch_size():
+    """Refutes REPORT_v0: 'long prompts hit 1311 tok/s vs 883' compares reported columns that
+    count prompt tokens. Useful (generated) tokens per second are lower for long prompts."""
+    from capacity import goodput, load_bench
+
+    rows = load_bench()
+    for b in (4, 8, 16, 32):
+        assert goodput(row(rows, b, 3584)) < goodput(row(rows, b, 512)), b
+    assert goodput(row(rows, 16, 512)) == pytest.approx(16 * 256 / 13.91)  # 294.4
+    assert goodput(row(rows, 16, 3584)) == pytest.approx(16 * 512 / 49.97)  # 163.9
+
+
+def test_b3_batch48_delivers_far_below_3200_and_below_batch24():
+    from capacity import goodput, load_bench
+
+    rows = load_bench()
+    b48, b24 = row(rows, 48, 3584), row(rows, 24, 3584)
+    assert b48["reported_tok_s"] == 1298.5  # even the inflated column falls, not 3200
+    assert goodput(b48) == pytest.approx(48 * 512 / 151.41)  # ~162.3 useful tok/s
+    assert goodput(b48) < goodput(b24)
+
+
 def test_given_crlf_csv_when_loaded_then_no_carriage_returns_leak_into_values(tmp_path):
     from capacity import load_bench
 

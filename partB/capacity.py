@@ -96,6 +96,26 @@ def identify_reported_formula(rows: list[dict]) -> dict:
     return out
 
 
+def goodput(r: dict) -> float:
+    """Useful throughput: generated tokens of completed requests per second of the run."""
+    return r["gen_len"] * r["num_requests"] / r["wall_clock_s"]
+
+
+def goodput_two_ways(r: dict) -> dict:
+    """(1) from wall_clock_s; (2) from the separately logged reported_tok_s, keeping only the
+    generated share of the tokens it counts (formula identified on every row above)."""
+    return {"from_wall_clock": goodput(r),
+            "from_reported_column": r["reported_tok_s"] * r["gen_len"] / (r["prompt_len"] + r["gen_len"])}
+
+
+def goodput_bounds(r: dict) -> dict:
+    """Latency-column estimates. They use medians/p95 on a different clock than wall_clock_s
+    (see timing_inconsistency), so they bracket the goodput rather than measure it."""
+    per_request_p50_s = (r["ttft_ms_p50"] + (r["gen_len"] - 1) * r["itl_ms_p50"]) / 1000
+    n_tokens = r["gen_len"] * r["num_requests"]
+    return {"from_p50_ttft_itl": n_tokens / per_request_p50_s, "from_e2e_p95": n_tokens / (r["e2e_ms_p95"] / 1000)}
+
+
 def timing_inconsistency(rows: list[dict]) -> list[dict]:
     return [{"batch_size": r["batch_size"], "prompt_len": r["prompt_len"], "wall_s": r["wall_clock_s"],
              "e2e_p95_s": r["e2e_ms_p95"] / 1000, "e2e_p95_exceeds_wall": r["e2e_ms_p95"] / 1000 > r["wall_clock_s"]}

@@ -116,6 +116,63 @@ def goodput_bounds(r: dict) -> dict:
     return {"from_p50_ttft_itl": n_tokens / per_request_p50_s, "from_e2e_p95": n_tokens / (r["e2e_ms_p95"] / 1000)}
 
 
+LONG = 3584
+
+
+def long_sweep(rows: list[dict]) -> list[dict]:
+    return sorted((r for r in rows if r["prompt_len"] == LONG), key=lambda r: r["batch_size"])
+
+
+def anomaly(rows: list[dict]) -> dict:
+    """Naive expectation: goodput rises with batch. Find where it stops and what changes there."""
+    sweep = [{**r, "goodput": goodput(r)} for r in long_sweep(rows)]
+    peak = max(sweep, key=lambda s: s["goodput"])
+    i = sweep.index(peak)
+    return {"peak_batch": peak["batch_size"], "up_to_peak": sweep[: i + 1], "after_peak": sweep[i + 1:]}
+
+
+def option_a_cap(rows: list[dict], requests: int, cap: int) -> dict:
+    """Cap concurrent sequences at a batch the log shows runs without preemption; the burst
+    runs as ceil(requests / cap) waves of that logged run (no extrapolation)."""
+    base = next(r for r in long_sweep(rows) if r["batch_size"] == cap)
+    assert base["preempted_seqs"] == 0
+    waves = -(-requests // cap)
+    wall = waves * base["wall_clock_s"]
+    observed = next(r for r in long_sweep(rows) if r["batch_size"] == requests)
+    g = base["gen_len"] * requests / wall
+    return {"cap": cap, "waves": waves, "wall_s": wall, "goodput": g, "observed_goodput": goodput(observed),
+            "vs_observed_pct": (g / goodput(observed) - 1) * 100, "basis": f"logged b{cap} row x {waves}"}
+
+
+def option_b_fp8(rows: list[dict], spec: dict, requests: int) -> dict:
+    """fp8 KV halves bytes/element. If the batch then fits, extrapolate wall clock from a
+    least-squares line through the non-preempting long rows. Quality impact: not measured."""
+    fp8 = {**spec, "bytes_per_elem": 1}
+    weights = spec["params"] * spec["bytes_per_elem"]  # weights stay fp16
+    budget = spec["gpu_gb"] * GB["decimal"] * spec["gpu_memory_utilization"] - weights - spec["overhead_gb"] * GB["decimal"]
+    cap = budget / seq_bytes(fp8)
+    pts = [(r["batch_size"], r["wall_clock_s"]) for r in long_sweep(rows) if r["preempted_seqs"] == 0]
+    mx = sum(x for x, _ in pts) / len(pts)
+    my = sum(y for _, y in pts) / len(pts)
+    slope = sum((x - mx) * (y - my) for x, y in pts) / sum((x - mx) ** 2 for x, _ in pts)
+    wall = my + slope * (requests - mx)
+    observed = next(r for r in long_sweep(rows) if r["batch_size"] == requests)
+    g = observed["gen_len"] * requests / wall
+    return {"kv_bytes_per_token": kv_bytes_per_token(fp8), "max_concurrent": cap, "fits": requests <= cap,
+            "wall_s": wall, "goodput": g, "vs_observed_pct": (g / goodput(observed) - 1) * 100,
+            "basis": f"extrapolated line through b{pts[0][0]}..b{pts[-1][0]} to b{requests}"}
+
+
+def option_c_max_model_len(rows: list[dict], spec: dict, new_max: int) -> dict:
+    """Paged attention allocates KV per token, so capacity in tokens does not depend on
+    max_model_len; requests longer than the limit are rejected."""
+    long_reqs = [r for r in long_sweep(rows) if r["batch_size"] == 48][0]
+    too_long = long_reqs["prompt_len"] + long_reqs["gen_len"] > new_max
+    return {"new_max_model_len": new_max, "capacity_tokens_unchanged": True,
+            "long_requests_rejected": long_reqs["num_requests"] if too_long else 0,
+            "goodput": 0 if too_long else goodput(long_reqs)}
+
+
 def timing_inconsistency(rows: list[dict]) -> list[dict]:
     return [{"batch_size": r["batch_size"], "prompt_len": r["prompt_len"], "wall_s": r["wall_clock_s"],
              "e2e_p95_s": r["e2e_ms_p95"] / 1000, "e2e_p95_exceeds_wall": r["e2e_ms_p95"] / 1000 > r["wall_clock_s"]}

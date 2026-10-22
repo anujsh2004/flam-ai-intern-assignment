@@ -151,6 +151,51 @@ def test_b3_batch48_delivers_far_below_3200_and_below_batch24():
     assert goodput(b48) < goodput(b24)
 
 
+def test_b2_long_sweep_goodput_peaks_at_24_then_falls_exactly_when_preemption_starts():
+    from capacity import anomaly, load_bench
+
+    a = anomaly(load_bench())
+    assert a["peak_batch"] == 24
+    assert [s["batch_size"] for s in a["after_peak"]] == [32, 48]
+    assert all(s["preempted_seqs"] > 0 and s["kv_cache_util"] >= 0.97 for s in a["after_peak"])
+    assert all(s["preempted_seqs"] == 0 for s in a["up_to_peak"])
+
+
+def test_b2_option_a_cap_at_logged_non_preempting_batch_runs_48_as_two_waves():
+    """Prediction grounded in a logged row: 48 requests = 2 waves of the observed b24 run."""
+    from capacity import load_bench, option_a_cap
+
+    p = option_a_cap(load_bench(), requests=48, cap=24)
+    assert p["waves"] == 2 and p["wall_s"] == pytest.approx(2 * 61.16)
+    assert p["goodput"] == pytest.approx(48 * 512 / (2 * 61.16))  # ~200.9 vs 162.3 observed
+    assert p["vs_observed_pct"] == pytest.approx((p["goodput"] / (48 * 512 / 151.41) - 1) * 100)
+
+
+def test_b2_option_b_fp8_kv_halves_bytes_so_48_fit_and_wall_is_extrapolated():
+    """fp8 KV -> 1 byte/elem -> 57,344 B/token -> 51.4 seqs: batch 48 fits. Wall clock at 48 is a
+    least-squares line through the non-preempting long rows (b4..b24): an extrapolation."""
+    from capacity import SPEC, load_bench, option_b_fp8
+
+    p = option_b_fp8(load_bench(), SPEC, requests=48)
+    assert p["kv_bytes_per_token"] == 57_344
+    assert p["max_concurrent"] == pytest.approx(12.08e9 / (57_344 * 4096))  # ~51.4
+    xs, ys = [4, 8, 16, 24], [28.98, 36.3, 49.97, 61.16]
+    mx, my = sum(xs) / 4, sum(ys) / 4
+    slope = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sum((x - mx) ** 2 for x in xs)
+    assert p["wall_s"] == pytest.approx(my + slope * (48 - mx))  # ~100.5 s
+    assert p["goodput"] == pytest.approx(48 * 512 / p["wall_s"])
+
+
+def test_b2_option_c_lower_max_model_len_cannot_help_this_workload():
+    """Paged KV capacity is in tokens, so max_model_len changes neither bytes/token nor capacity;
+    every long request is 3584 + 512 = 4096 tokens, so a lower limit would reject them."""
+    from capacity import SPEC, load_bench, option_c_max_model_len
+
+    p = option_c_max_model_len(load_bench(), SPEC, new_max=2048)
+    assert p["capacity_tokens_unchanged"] is True
+    assert p["long_requests_rejected"] == 48 and p["goodput"] == 0
+
+
 def test_given_crlf_csv_when_loaded_then_no_carriage_returns_leak_into_values(tmp_path):
     from capacity import load_bench
 

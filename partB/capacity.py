@@ -173,6 +173,19 @@ def option_c_max_model_len(rows: list[dict], spec: dict, new_max: int) -> dict:
             "goodput": 0 if too_long else goodput(long_reqs)}
 
 
+# user decision 2026-10-23: propose (a) cap at 24 (largest logged non-preempting batch);
+# (b) fp8 KV is the follow-up experiment (needs a quality evaluation)
+CHOSEN_CHANGE = {"propose": "a", "cap": 24, "follow_up_experiment": "b"}
+
+
+def b4_expectations(rows: list[dict], cap: int) -> dict:
+    """The serving counter that confirms the B2 mechanism and its expected values."""
+    return {"counter": "vllm:num_preemptions_total",
+            "long_sweep": [{"batch_size": r["batch_size"], "expected_min": r["preempted_seqs"]} for r in long_sweep(rows)],
+            # no preemption expected if the cap is within the sequences the log shows fitting (25)
+            "after_cap_48_request_burst": 0 if cap <= min(f["fit"] for f in fit_from_preemption(rows)) else None}
+
+
 def timing_inconsistency(rows: list[dict]) -> list[dict]:
     return [{"batch_size": r["batch_size"], "prompt_len": r["prompt_len"], "wall_s": r["wall_clock_s"],
              "e2e_p95_s": r["e2e_ms_p95"] / 1000, "e2e_p95_exceeds_wall": r["e2e_ms_p95"] / 1000 > r["wall_clock_s"]}

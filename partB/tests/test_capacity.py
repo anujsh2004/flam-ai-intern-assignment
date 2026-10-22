@@ -196,6 +196,26 @@ def test_b2_option_c_lower_max_model_len_cannot_help_this_workload():
     assert p["long_requests_rejected"] == 48 and p["goodput"] == 0
 
 
+def test_b4_preemption_counter_expectations_follow_the_log_and_the_chosen_cap():
+    """B2 mechanism confirmed if the preemption counter rises exactly where goodput falls.
+    preempted_seqs counts sequences preempted at least once, so the counter is >= it."""
+    from capacity import b4_expectations, load_bench
+
+    e = b4_expectations(load_bench(), cap=24)
+    assert e["counter"] == "vllm:num_preemptions_total"
+    assert {(x["batch_size"], x["expected_min"]) for x in e["long_sweep"]} == {
+        (4, 0), (8, 0), (16, 0), (24, 0), (32, 7), (48, 23)}
+    assert e["after_cap_48_request_burst"] == 0
+    # a cap above what fits (25) cannot promise zero preemptions
+    assert b4_expectations(load_bench(), cap=30)["after_cap_48_request_burst"] is None
+
+
+def test_chosen_change_is_recorded_as_a_with_b_follow_up():
+    from capacity import CHOSEN_CHANGE
+
+    assert CHOSEN_CHANGE == {"propose": "a", "cap": 24, "follow_up_experiment": "b"}
+
+
 def test_given_crlf_csv_when_loaded_then_no_carriage_returns_leak_into_values(tmp_path):
     from capacity import load_bench
 

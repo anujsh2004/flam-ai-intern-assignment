@@ -1,9 +1,30 @@
 # Project state
 
-_Last updated: 2026-10-22 (A2 complete on `part-a-audit`; merge into `main` awaiting user approval)_
+_Last updated: 2026-10-22 (A3 complete on `part-a-analysis`; merge into `main` awaiting user approval)_
 
 ## Current phase / task
-Phase 2 — **A2 is complete** on branch `part-a-audit` (from `main` at `48f28fe`). Next: the user approves the `--no-ff` merge into `main`, then Phase 3 (A3) on `part-a-analysis`. Order: A1 -> A2 -> A3 -> A4 -> B -> C (D-10).
+Phase 3 — **A3 is complete** on branch `part-a-analysis` (from `main` at `c155ad7`, after the A2 merge). Next: the user approves the `--no-ff` merge, then A4 (memo). Order: A1 -> A2 -> A3 -> A4 -> B -> C (D-10).
+
+## A3 outcome (details: `partA/A3_analysis.md`; tables: `partA/A3_results.md`)
+- **Single cost number (D-06, decided on evidence):** tokens per parallel sentence vs English, ratio of totals, serving tokenizer (Llama-3.2-3B proxy):
+  - hin **2.53** [2.50, 2.55];
+  - kan **8.87** [8.77, 8.96];
+  - tam **7.63** [7.55, 7.71].
+
+  These are 95% article-clustered CIs.
+- **Why:** parallel sentences hold content constant. On the same tokens, the other units give hin 2.16 (word), 3.86 (grapheme) and 0.99 (byte). The instrument matters about 6×: gpt2 7.44 vs IndicBERT 1.17.
+- **Insight for A4:** the cost problem is **Dravidian** (kan/tam ≈ 3× Hindi's premium), not "Indic" as a whole.
+- **Per-request BOS overhead:** small (2.53 -> 2.47).
+- **Per-sentence spread** (hin): p10–p90 2.00–3.16.
+- **Pre-registration check:** tokenizer ranking ✅. "Sentence between word and byte" ❌ for Hindi, recorded.
+- **Verification:**
+  - full suite 210 passed (before `c0b7f2f`);
+  - targeted A3 mutation **12/12** (D-19);
+  - bootstrap cross-checked against A1's;
+  - 28 evidence IDs verified by a test.
+- **Final gate still owed (D-19):** one full mutation run before submission.
+
+## A2 (complete, merged into `main` at `c155ad7`)
 
 ## A2 outcome (details: `partA/A2_audit.md`; numbers: `partA/A2_results.md`)
 | # | Finding | Verdict | Headline |

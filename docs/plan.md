@@ -126,14 +126,14 @@ Pre-registered on 2026-10-22, **before any A3 measurement** (D-18, D-06). Design
 - **Process:** same as A2. TDD, granular commits, a full suite before each commit, a full mutation run covering the new code, docs at the end, merge after approval.
 
 To-do:
-- [ ] 1. Pre-registration: this section + D-18, D-06 update
-- [ ] 2. Register IndicBERT v2 (pin, short label, skip marker not needed: ungated)
-- [ ] 3. `partA/analysis/premium.py`: per-sentence count table; premium; clustered bootstrap; distribution; overhead variant. Hand-derived tests, plus the cross-check against `units.cluster_bootstrap_ratio`.
-- [ ] 4. Generate `partA/analysis/results.json` for 4 tokenizers × 5 denominators × 3 languages, with a staleness test
-- [ ] 5. `partA/analysis/report.py` -> `partA/A3_results.md`, with a staleness test
-- [ ] 6. `partA/A3_analysis.md`: answer the single-number question; alternatives and when they win; evidence index + test
-- [ ] 7. Mutation check extended to A3 code; full run
-- [ ] 8. NOTEBOOK / state / plan / decision; merge to `main` after approval
+- [x] 1. Pre-registration (`6f2300e`)
+- [x] 2–3. IndicBERT v2 registered; `analysis/premium.py` with hand-derived tests and the cross-check vs A1's bootstrap (`e389572`)
+- [x] 4. `analysis/results.json` + staleness test (`c0b7f2f`)
+- [x] 5. `analysis/report.py` -> `A3_results.md`, with a staleness test
+- [x] 6. `A3_analysis.md` with evidence index + test (negative check passes)
+- [x] 7. Mutation: **targeted** run on A3 code (user decision, D-19): 12/12. Full run deferred to the final gate.
+- [ ] 8. Docs; merge to `main` after approval
+- [ ] **Final gate before submission:** one full `python partA/audit/mutation_check.py` run (D-19).
 
 ### Phase 4 — A4 memo — branch `part-a-memo`: 1 page, numbers pulled from generated results.
 

@@ -65,11 +65,34 @@ Sources must be real and read; none are cited yet. Where X/Twitter or articles a
 - **Splits:** dev + devtest (2,009). No training happens, so there is no leakage reason to hold devtest out. Splits are reported separately as a consistency check.
 - **Status:** **Decided.**
 
-## D-04 Tokenizers for A3 — Open
+## D-04 Tokenizers for A2/A3 — Decided for A2 (2026-10-21); A3 may add more
+- **A2 set:**
+  - `gpt2` (tiktoken): the original instrument, held fixed to isolate script flaws.
+  - `xlm-roberta-base`: open, ungated, multilingual SentencePiece. Used for F3/F4 because whether lowercasing or NFC matters depends on the tokenizer's own normalisation.
+  - **Llama-3.2-3B tokenizer** (vocab 128,256): proxy for FLM-4B's tokenizer.
+- **Why Llama-3.2-3B is the FLM-4B proxy (evidence):**
+  - **Config match:** its `config.json` (read from the ungated mirror `unsloth/Llama-3.2-3B`) matches `model_spec.md` on every architecture number: 28 layers, d_model 3072, 24 Q heads, 8 KV heads, head_dim 128, vocab 128,256 ≈ "128k".
+  - **Mismatch:** parameter count, ~3.2B (tied embeddings) vs 4.2B. So FLM-4B is *not* literally this model, and the tokenizer is a proxy, not ground truth.
+  - **Language support:** Hindi is officially supported per the model card.
+- **Alternatives near 128k:**
+  - Mistral-Nemo Tekken: 131,072 (Salamandra report).
+  - DeepSeek-V3: ~128.8k–129.3k, sources disagree.
+
+  Vocab sizes are close, but neither matches the architecture. Gemma (~256k) and Qwen (~152k) are further away.
+- **Access:** the official `meta-llama/Llama-3.2-3B` repo is gated. **Granted 2026-10-21 (user).**
+  - **Pinned revision:** `13afe5124825b4f3751f836b40dafda64c1ed062`.
+  - **Official `config.json`:** matches all 5 spec numbers; vocab 128,256; tied embeddings.
+  - **`tokenizer.json` SHA-256:** `79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4`.
+  - Adds 1 special token (BOS).
+  - The planned mirror hash-check was dropped, since the official file is used directly.
+- **Other pins:** XLM-R `FacebookAI/xlm-roberta-base@e73636d4f797dec63c3081bb6ed5c7b0bb3f2089`; vocab 250,002; ungated; case-sensitive; precompiled normaliser.
+- **Earlier option list (kept for the record):** baseline `gpt2`/tiktoken (as v0); `cl100k_base`/`o200k_base`; XLM-RoBERTa (SentencePiece, multilingual); an Indic-focused tokenizer (e.g. IndicBERT/MuRIL); Llama-3 / Gemma / Qwen tokenizers (open weights).
+
+## D-04a (superseded) original D-04 notes
 - **Alternatives:** baseline `gpt2`/tiktoken (as v0); `cl100k_base`/`o200k_base`; XLM-RoBERTa (SentencePiece, multilingual); an Indic-focused tokenizer (e.g. IndicBERT/MuRIL); Llama-3 / Gemma / Qwen tokenizers (open weights).
 - **Criteria:** open and downloadable without gating, Indic coverage, relevance to a ~128k-vocab model like FLM-4B (spec says 128k vocab — Llama-3-class tokenizer is the closest comparison), ease of reproduction.
 - **To verify:** which load offline-reproducibly; effect of vocab size on fertility (confounded by vocab — must note in caveats).
-- **Status:** Open; need >=2 incl. one Indic-aware and keep gpt2 as the continuity baseline. User confirmed open Hugging Face models/tokenizers are acceptable. Gated repos (e.g. Llama) may need auth — verify.
+- **Status:** Superseded by D-04 above (2026-10-21). Kept for history.
 
 ## D-05 Grapheme-cluster counting (A3 denominator) — Decided, with a documented non-uniformity
 - **Alternatives:** `regex` `\X` (UAX #29 extended grapheme clusters); `grapheme` package; manual count of non-combining code points; ICU (PyICU, a heavy Windows install).
@@ -128,3 +151,63 @@ Sources must be real and read; none are cited yet. Where X/Twitter or articles a
 - **Pins:**
   - **Decision:** exact versions that ran in `.venv`, including numpy 2.5.4 (pulled in by `transformers`) and pandas 3.0.6. At the user's request, pandas was installed into the venv before pinning, so the pin is a tested version.
   - **Note:** global Python has pandas 2.3.3. pandas 3 is a new major version, so check Part B code against it.
+
+## D-13 A2 pre-registered verdicts — Decided by user (2026-10-21, before measurement)
+Verdicts are fixed before measuring. Every finding is still measured (evidence rule). If a measurement contradicts its verdict, the number is brought to the user; it is never silently relabelled.
+
+| # | Location | Verdict | Key measurement |
+|---|---|---|---|
+| F1 | `fertility.py` L62 `split(" ")` | Code bug. *Pre-registered* as "small blast radius"; **revised 2026-10-21 after measurement, user-accepted**: material, up to +2.78% fertility on FLORES Kannada (507/2,009 lines) | Δ on toy and FLORES |
+| F2 | L64–67 mean of per-line ratios | Method/decision flaw, fixable (not a code bug) | macro vs micro (ratio of totals) |
+| F3 | L60 `.lower()` | Code bug: measured text must equal served text; English and Indic counts are separate measurements | Δ on the English baseline and on the hin/eng ratio, under gpt2 and XLM-R |
+| F4 | L49 NFC | **Looks suspicious but fine** (user decision); effect is tokenizer-dependent | Δ under gpt2 and XLM-R, recorded as evidence |
+| F5 | L25 `random.seed(1337)`, `import random` | Technical debt: unused | Removed in v1; test proves output identical |
+| F6 | L33 `add_special_tokens=False` | Under test: possible false fertility if flipped | Δ with special tokens on |
+| F7 | Tokens/word as a cost metric | Conceptual flaw | Fertility ratio vs tokens-per-parallel-sentence ratio |
+| F8 | `len(line)`; tok/char "confirms" | Conceptual flaw (code points differ by script; shares the numerator, so not independent), measured as a by-product | — |
+| F9 | `gpt2` as the instrument | The cost in question is **our** model's ("Serving Hindi will cost us"; FLM-4B, `model_spec.md`). By the user's rule (GPT-2 cost -> validity flaw; our-model cost -> conceptual flaw), this is a **conceptual flaw** | gpt2 vs Llama-3.2-3B proxy ratios |
+
+Scope: script and metric (F1–F9), plus an audit of REPORT_v0 §1 claims in `partA/A2_audit.md`.
+
+## D-14 A2 effect metric and threshold — Decided (pre-registered 2026-10-21)
+- **Metrics:** the numbers the report itself uses. Per-language fertility (tok/word), tok/char, and cross-language ratios vs English. FLORES adds kan and tam.
+- **Effect:** Δ% = (variant − v0) / v0 × 100, reported per metric, with direction.
+- **Negligible:** |Δ| < 1% on every reported metric **and** the report's conclusion is unchanged. Otherwise "material", reported with magnitude.
+- **Order of reporting:** isolated delta per fix (vs v0), then leave-one-out ablation from v1, then cumulative. Each step gets a note.
+- This threshold is fixed for A2 and will not be changed after seeing results.
+- **Amendment 1 (2026-10-21, user decision):**
+  - **What changes:** the "report's conclusion unchanged" half of the rule is **not yet operationalised**. It will be defined after all F1–F9 metrics have been seen, then amended in as they are reviewed.
+  - **Disclosure:** this half is therefore *post-hoc*, and the audit must say so wherever it is used.
+  - **What doesn't change:** the 1% numeric half is unchanged and still pre-registered. Until then the harness reports the 1% half only, at three levels: corpus overall, per language (incl. ratios vs eng), and per language own metrics.
+- **Amendment 2 (2026-10-22; post-hoc; ACCEPTED by user 2026-10-22):**
+  - **Rule:** a fix "changes the report's conclusion" if it changes the Hindi multiplier at the report's own precision (≈6×, nearest integer), or breaks the claims "the two metrics agree" or "a property of the script".
+  - **Applied:** F7, F8 and F9 change the conclusions; F1–F6 do not. F3 moves FLORES gpt2 hin from 6.10 to 6.32, still ≈6×.
+  - **Disclosure:** labelled post-hoc in `partA/A2_audit.md`.
+
+## D-16 V1 denominator = tokens per parallel sentence — Decided for V1 (user confirmed 2026-10-22); the single cost number is still decided in A3
+- **Problem:** F7 shows tokens per word is not a cost ratio. V1 needs *some* denominator.
+- **Choice:** `sentence`, because parallel sentences hold content constant (D-06; Petrov et al. §3).
+- **Consequence:** in V1, F1 and F2 contribute exactly 0 (ablation). They matter only for the per-word metric.
+- **Open:** whether this is *the* single routing/cost number is A3's decision. It needs CIs, ≥2 tokenizers, a per-request overhead model and output tokens.
+
+## D-17 F9 classification and the FLM-4B proxy — Decided (user rule, 2026-10-21)
+- **Classification:** REPORT_v0 says "Serving Hindi will cost **us**", meaning our model (FLM-4B). By the user's rule, measuring it with gpt2 is a **conceptual flaw**.
+- **Measured with the Llama-3.2-3B proxy (D-04):** hin per-sentence ratio is 7.44 (gpt2) -> 2.53 (proxy), FLORES, V1.
+- **Caveat:** a proxy, not FLM-4B's actual tokenizer (parameter count differs).
+
+## D-15 Jev (TypeSafe AI hosted classifier) — Rejected for A1–A4/B; pattern noted for Part C (2026-10-21)
+- **What it is:** a hosted, typed classification model (yes/no, choice, ordered score) with claimed calibration. It does not generate text.
+- **Properties (secondary sources):**
+  - early access only; English-first ("other languages … not equally well");
+  - probabilistic;
+  - vendor-only benchmarks;
+  - one practitioner test titled "noticeably less accurate".
+- **Rejected because:**
+  - A2/A3 are exact, reproducible counting, and the evidence rule plus the live defense need rerunnable scripts.
+  - For A1 and A4, deterministic script detection and the existing metadata already cover the need.
+  - Part C forbids external API spend, and four of six target languages have no native reviewer to validate it.
+- **Kept:** the *pattern* (a calibrated, ordered-score judge), possibly built from a local open multilingual model and calibrated on reviewer labels. To be evaluated in Part C.
+- **Sources:**
+  - mindstudio.ai/blog/what-is-jev-classifier-model
+  - innfactory.ai/en/blog/jev-system-one-model-classifier-not-llm
+  - qapilot hashnode test (title and comments only)

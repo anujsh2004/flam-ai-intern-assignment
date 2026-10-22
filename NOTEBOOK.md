@@ -86,3 +86,247 @@ Format: hypothesis -> experiment -> result -> revision. Dead ends are kept.
 - `31f0e44`, `edd8a50`, `4bedafe` on `part-a-corpus`
 
 Next: commit this notebook and `state.md` update, merge A1 into `main` after approval, then A2.
+
+## 2026-10-21 — A2: auditing `fertility.py`
+
+**Pre-registration first** (`fadbc4d`). The verdicts F1–F9, the <1% negligible threshold and the reporting order were committed before any A2 number existed (D-13, D-14), so the results can't move the goalposts.
+
+**FLM-4B tokenizer proxy.**
+- Hypothesis: the spec's architecture numbers correspond to a real open model.
+- Result: Llama-3.2-3B's config matches on every architecture number (28 layers / 3072 / 24 Q / 8 KV / 128 head_dim / 128,256 vocab), but not on parameter count (≈3.2B vs 4.2B). So it's a proxy, not ground truth.
+- The official repo is gated: download said "requires approval". Waiting on the user.
+
+**Step 3, reproduce v0.**
+- Hypothesis: the report's numbers might not come from this script.
+- TDD: wrote 3 tests first. 2 were red (no loader module). The third, which runs the unmodified CLI, was already green: it prints "hin is 5.89x".
+- Added `audit/v0.py`, which loads `starter_kit/fertility.py` only if its SHA-256 matches the provided file (`93528e33…`). Result: 3 passed.
+- Unrounded: eng 1.2652 / 0.2256, hin 7.4485 / 1.5791, ratio 5.887.
+- Conclusion: the report faithfully prints what the code computes. A2 is therefore about whether the code and the metric are right, not about transcription errors.
+
+**Step 4, v1 skeleton.**
+- TDD: 11 tests first, all red (no module).
+- `fertility_v1.py` with an empty `Config` (V0 behaviour only): `analyze` returns the *exact* same floats as the original on the toy corpus and all 8 FLORES files. `--v0` CLI stdout is byte-identical to the original. 11 passed; suite 58.
+- Note: the skeleton already omits the unused `import random` / `random.seed(1337)` (F5). The proof that this changes nothing is owed in step 9.
+
+**Step 5, F1 `split(" ")`.**
+- Flag added test-first (`e542deb`): fake tokenizer, `"a  b"` gives 2/3 vs 1.0.
+- Harness added (`22cf99f`): `compare()` reports delta %, changed lines and the D-14 verdict.
+- Prediction (user): code bug with a near-zero blast radius.
+- Measured (`python partA/audit/experiments.py F1 --tokenizer gpt2`):
+
+  | corpus | language | fertility v0 -> fixed | change | lines changed |
+  |---|---|---|---|---|
+  | toy | eng | 1.2652 -> 1.2831 | +1.41% | 1 |
+  | toy | hin | 7.4485 -> 7.5985 | +2.01% | 1 |
+  | FLORES | eng | — | +0.00% | 1 |
+  | FLORES | hin | — | +0.03% | 13 |
+  | FLORES | **kan** | — | **+2.78%** | **507 of 2,009** |
+  | FLORES | tam | — | +0.52% | 158 |
+
+  The toy ratio moves from 5.887 to 5.922. Both corpora are "material" under D-14.
+- **Surprise:** the blast radius is not near zero for Kannada. FLORES Kannada has 1,069 empty "words" from double ASCII spaces (e.g. `'ದೇಶಗಳ  ರೋಗಿಗಳಲ್ಲಿ'`).
+- Confound check: is `split()`'s wider Unicode-whitespace handling responsible for any of the changes? Classified every changed line: 100% contain a double ASCII space, and 0 contain another whitespace character. So the effect is purely double spaces.
+- grep found 519 raw lines with a double space versus 507 changed; the other 12 have the double space only at the line ends, which `strip()` already removes.
+- Verdict unchanged (code bug). The blast-radius expectation is revised and reported to the user.
+- Direction: v0 *under*-states fertility, because the denominator is inflated.
+
+**Evaluation round on the A2 work (before more findings).**
+- **Independent recomputation:** F1 recomputed with plain tiktoken and no project code. The max absolute difference vs the harness is **0** across all 6 corpus/language pairs.
+- **Determinism:** two runs give byte-identical JSON, identical to the committed file.
+- **Mutation testing, first run:** **10/14** killed. The survivors exposed untested paths:
+  - blank-line skipping;
+  - `load_corpora()`;
+  - the FINDINGS registry and committed results (no staleness test);
+  - the SHA-256 guard's failure branch.
+- **User claim, "the corpus contains a lot of blank lines":** measured as **0 empty and 0 whitespace-only lines** in all 8 raw FLORES files and both toy files. The blank-line test was still added, framed around *pasted* defense input: with the fix on, a blank line would raise ZeroDivisionError.
+- **Gap tests** (`19aee1b`) took mutation to **14/14**.
+- **Refactors from the review, each test-first:**
+  - `V1` is the single source of corrected defaults. `--v0` is an overridable base, so `--v0 --split whitespace` isolates one fix (`ded8448`).
+  - Per-language verdicts (`be9454c`). The fake-data test surfaced a subtlety: if only English moves, every other language's *ratio* moves too. So verdicts are reported both with ratios and on own metrics only. On FLORES, F1 is material for kan only (eng/hin/tam negligible). The staleness test caught the old JSON structure before regeneration, which shows it works.
+  - Fresh-clone behaviour: tests needing FLORES text or gpt2 now skip with "run `python partA/corpus/prep.py`" (`2532cea`). Simulated fresh clone: 40 passed, 39 skipped, 0 failed.
+- **Mutation check committed** (`59bdddc`), 19 mutants. One mutant inverted the skip logic and exited **0** with only 19/35 tests passing. A naive checker would have scored it as surviving; counting passes against the baseline caught it. **19/19.**
+- **Corrections to my own wording:** an earlier mutant was named "micro instead of macro", but it only perturbed the result by a factor. It is renamed "aggregation perturbed"; real micro-vs-macro tests come with F2.
+- **D-14 amended:** the "conclusion unchanged" half will be defined later, post-hoc and disclosed as such.
+
+**Step 6, F3 `.lower()`.**
+- Flag added test-first (`b59dd6f`): a fake case-sensitive tokenizer gives `'NASA x'` 1.0 lowercased vs 2.5 served.
+- Tokenizer revisions pinned as `hf:repo@rev` (`4afb3fd`). XLM-R is `FacebookAI/xlm-roberta-base@e73636d4`, ungated, vocab 250,002.
+- I mislabelled my own probe: it printed "lowercases internally? True", but the check was *tokens differ*. XLM-R is in fact **case-sensitive**, so F3 is measurable under it too.
+- No direction was predicted, only "changes the English baseline".
+- Measured (`python partA/audit/experiments.py F3 --tokenizer gpt2`, then `--tokenizer hf:FacebookAI/xlm-roberta-base@e73636d4…`):
+
+  | tokenizer | corpus | eng fertility (v0 -> served) | indic/eng ratio |
+  |---|---|---|---|
+  | gpt2 | toy | **−2.84%** | +2.92% |
+  | gpt2 | FLORES | **−3.45%** (925 lines changed) | **+3.57%** for hin, kan and tam |
+  | XLM-R | toy | −2.80% | +2.88% |
+  | XLM-R | FLORES | −1.72% | +1.71–1.73% |
+
+  Indic own fertility moves only −0.01 to −0.04%, on the 30–56 lines with Latin-script words. Material under D-14 for both tokenizers.
+- **Surprise:** lowercasing *increases* English token counts, so v0 *overstates* English fertility and *understates* the Indic gap. My hypothesis is that both vocabularies were learned from cased text; I have not tested this.
+- Verdict holds: code bug. It measures unserved text, and the bias falls on English only.
+
+**Step 7, F4 NFC** (pre-registered as "looks suspicious but fine").
+- Flag added test-first: precomposed U+095B is 1 code-point token raw, 2 after NFC.
+- Design fix along the way: result records stored `repr(Config)`, so every new field churned every committed JSON. They now store only the fields that differ from v0. Regenerated files had identical numbers (checked).
+- Measured: **negligible under both tokenizers**. Largest moves: gpt2 hin −0.11% fertility; XLM-R kan +0.06%. Every other metric is under 0.1%.
+- **My own claim, re-checked.** I had justified XLM-R with "it normalises internally". If that were fully true, NFC would change 0 lines, but the harness said 183 Hindi lines "changed".
+  - Direct probe: XLM-R's precompiled normaliser maps raw `ज़` and its NFC form to the same code points and the same token (id 84173).
+  - So the 183 was mostly **tok/char moving through `len(line)`** (the code-point denominator), not tokens.
+- **Harness flaw found and fixed, test-first.** `lines_changed` mixed "tokens changed" with "any metric changed". It now reports `tokens / words / any_metric` separately. Old counts equal the new `any_metric` in all 5 files; other numbers are identical.
+- The split shows each mechanism:
+  - F1 changes words only (kan 0/507/507);
+  - F3 changes tokens only (eng 925/0/925);
+  - F4 under gpt2: hin tokens change in 180 lines (byte-level BPE sees different bytes);
+  - F4 under XLM-R: hin tokens change in **3**, any metric in 183. My claim holds for Hindi nukta letters.
+- **Kannada differs:** NFC *composes* a vowel sign plus a length mark (U+0CD5/U+0CD6) and changes tokens in 17 lines under both tokenizers.
+- Verdict confirmed with evidence: **looks suspicious but fine**. The mechanism depends on the tokenizer and script; the effect is ≤0.11% everywhere.
+- **Cost noted:** the staleness test now recomputes 5 result files, so the suite takes ~64 s and the mutation run ~20 min.
+- The user accepted the cost: accuracy over speed, and every run is a full run (no targeted or skipped suites).
+
+**Step 8, F2 aggregation** (method/decision flaw, D-13). User decision: totals (sum/sum) are the right aggregate.
+- **Constructed corpus**, worked out by hand with a fake one-token-per-letter tokenizer:
+  - lines `abcdef` (6 tokens / 1 word), `a b c d e f g h i j` (10/10) and `ab cd ef gh` (8/4);
+  - per-line average fertility = 3.0, totals = 24/15 = 1.6;
+  - tok/char: per-line average ≈ 0.7512, totals = 24/36.
+- **Property test:** splitting `ab cd ef gh` into two lines leaves the totals unchanged but moves the per-line average from 3.0 to 2.75. A cost metric must not depend on where the line breaks fall.
+- The v0 path still reproduces the original to the last digit (same additions, same order). Suite: 94 passed.
+- **Measured:**
+  - gpt2 FLORES: kan **−1.61%**, tam −0.98%, eng −0.69%, hin −0.45%;
+  - XLM-R FLORES: kan **−1.70%**, tam **−1.06%**, hin −0.89%, eng −0.80%;
+  - XLM-R toy: eng −1.34%.
+- **Direction:** the per-line average *overstates* fertility in 11/12 cells. The exception is XLM-R toy hin (+0.30%). Short lines carry high ratios and get equal weight.
+- **Ratios vs English move less**, all under 1% on FLORES, because the bias partly cancels across languages. So F2 mainly distorts *absolute* fertility, most of all for the Dravidian languages.
+- "Lines changed" is 0 everywhere, and that is correct: F2 changes how lines combine, not any line's own value.
+- Material under D-14 (several cells ≥1%).
+
+**Mutation-checker bug (my tool, not the code under test).**
+- **What happened:** the F2 mutation run crashed after 11/11 kills. The "F2 branch inverted" mutant made pytest print Devanagari, and the checker decoded the child's output as cp1252, the Windows default. Result: `UnicodeDecodeError` -> stdout `None` -> `TypeError`. The run was *incomplete*, not a pass.
+- **Reproducing it test-first took three tries:**
+  - Try 1 was red only because `run_tests` had no test-list parameter: the wrong reason.
+  - Try 2 passed, because the original run had `PYTHONIOENCODING=utf-8`, so the child wrote UTF-8. Recreated with `monkeypatch.setenv`.
+  - It still passed. cp1252 can decode most bytes, failing only on 0x81/0x8D/0x8F/0x90/0x9D, and the UTF-8 bytes of `ज़` contain none of those. The real crash was byte 0x81, as in U+0941 (`E0 A5 81`).
+  - Try 3, using U+0941, was **red with the exact original error**.
+- **Fix:** the child is forced to `PYTHONIOENCODING=utf-8` and the parent decodes UTF-8 with `errors="replace"`. The regression test is green under both `PYTHONIOENCODING=utf-8` and `cp1252`.
+- **Lesson:** a repro that passes for the wrong reason is not a repro. Check the byte-level mechanism.
+
+**Step 9, F5 `random.seed(1337)`** (technical debt, D-13). v1 has omitted it since step 4; this step proves that was safe.
+- **Static:** the AST of the original uses `random` only as `import` and `.seed`, nothing else. The test asserts that exact list, so any other use would fail it. v1's AST uses `random` 0 times.
+- **Dynamic:** v0's results are identical after perturbing the global RNG with seeds 0, 1337 and 2³¹−1.
+- These are evidence tests, so not red->green: the removal predates them. Their power comes from mutants instead:
+  - "F5 tech debt reintroduced in v1" -> killed;
+  - "v1 line order depends on RNG" (`random.shuffle` of lines) -> killed, almost certainly by the AST test (54/55 passed; the failing test was not identified).
+- **Prediction recorded before the run:** the shuffle might survive as an equivalent mutant, because both aggregations are order-invariant sums apart from float rounding. Not settled by this run, since the AST test probably fired first.
+- Mutation **31/31**. Progress is invisible in background runs because Python buffers redirected output; future runs use `python -u`.
+
+**Step 10, F6 `add_special_tokens=False`** (user: test whether it could be a false-fertility case).
+- **Design:** the harness passes one tokenizer to both configs, so special tokens are modelled as a per-sequence count that each tokenizer reports: tiktoken 0, HF `num_special_tokens_to_add()`.
+- **The shortcut is verified, not assumed:** on 400 real FLORES lines (kan + eng), `len(encode(s)) + count` equals XLM-R's own `add_special_tokens=True` length in every case.
+- A shared `count_tokens()` keeps `analyze()` and the changed-line counter in agreement. No committed results needed regenerating, thanks to the stable variant labels.
+- **Measured** (`experiments.py F6`):
+  - gpt2: exactly 0 everywhere;
+  - XLM-R toy: eng **+20.81%**, hin **+23.74%**;
+  - XLM-R FLORES: eng +7.35%, hin +6.02%, kan +5.58%, tam +5.59%, every line changed. Ratios vs eng move −1.24% to −1.65% (a constant per-line overhead pulls ratios towards 1).
+- **Reading:** the *counterfactual* is material false fertility. Counting `<s></s>` per line would inflate fertility, by more on short lines (toy 7.8 vs FLORES 21.3 words per sentence).
+- So v0's `False` is the correct choice for a per-text fertility metric: **looks suspicious but fine**, with evidence. The size of the counterfactual depends on the tokenizer (0 for gpt2) and on line length.
+- **Open, for A3, not claimed here:** real serving pays special tokens once per *request*, not per sentence. That belongs in the cost model, not in fertility.
+- **Process slip.** The F6 mutation run aborted after 25/25 kills. I had changed `lines_changed` to use `count_tokens()` but not the mutant that targets that line, so the checker refused a snippet found 0 times. The run was incomplete, not a pass.
+  - Fix: retargeted the mutant and re-ran the full check.
+  - Prevention: a fast test in the normal suite asserts that every mutant snippet occurs exactly once. Run against a copy with the stale snippet restored, it fails in 0.07 s and names the mutant.
+
+**Llama access granted** (user).
+- `meta-llama/Llama-3.2-3B@13afe512…` downloaded. The official `config.json` matches FLM-4B on all 5 architecture numbers; vocab 128,256; tied embeddings.
+- `tokenizer.json` SHA-256 `79e3e522…b2b4`. It loads through `fertility_v1` unchanged; 1 special token (BOS).
+- With the official file available, the plan to hash-check the ungated mirror against it was dropped. F9 is unblocked.
+
+**Step 11, F7 + F8** (conceptual, D-13). Two new fields:
+- `denominator`: words (v0) / codepoints / graphemes / bytes / sentence;
+- `char_unit`: codepoints (v0) / graphemes / bytes.
+
+They reuse A1's tested `units.py`, so nothing is reimplemented. Built test-first, with hand-worked values (e.g. `नमस्ते` = 6 code points / 3 graphemes / 18 bytes, giving tok/char 1.0 / 2.0 / 1/3). CLI labels follow the unit, and v0 wording stays byte-identical.
+- **Safeguard worked:** after the V1 line changed, the stale-mutant test caught 2 outdated mutants in 0.07 s instead of 25 minutes into a run.
+- **Own slip:** my scripted edit of the mutant list turned an escaped `\n` into a real newline, which broke the file's syntax. The test caught it at once, and I fixed it by hand.
+- **F7 measured.** The absolute deltas are meaningless here because the unit changes; only the ratios vs eng matter.
+
+  | FLORES | per word -> per parallel sentence |
+  |---|---|
+  | gpt2 hin | 6.10 -> **7.18** (+17.6%) |
+  | gpt2 kan | 17.40 -> **13.11** (−24.6%) |
+  | gpt2 tam | 19.40 -> **14.95** (−23.0%) |
+  | XLM-R hin | 1.05 -> 1.23 (+17.2%) |
+  | XLM-R kan | 1.77 -> 1.34 (−24.6%) |
+  | XLM-R tam | 1.72 -> 1.33 (−22.9%) |
+
+  The direction matches A1's words-per-content ratios (hin 1.17, kan 0.74, tam 0.77). Per-word ratios **understate** Hindi's cost and **overstate** Kannada's and Tamil's.
+  - The distortion is almost identical under both tokenizers, as expected: it comes from the denominator, not the tokenizer.
+  - So the report's "5.89×" is not a cost ratio. **Conceptual flaw confirmed.**
+- **F8 measured** (same tokens, tok/char unit changed):
+
+  | FLORES | per code point / per grapheme / per byte |
+  |---|---|
+  | gpt2 hin | 7.12 / **10.89** / **2.77** |
+  | XLM-R hin | 1.23 / 1.88 / **0.48** |
+  | XLM-R tam | 1.13 / 1.75 / 0.42 |
+
+  The direction can even flip: per byte, XLM-R makes Hindi look cheaper than English. Our reproduction of the report's "two metrics agree" is 5.887 vs 6.998. They share a numerator and differ only through characters-per-word, so they are not independent confirmation. **Conceptual flaw confirmed.**
+- **Decision recorded for user review:** V1's denominator is set to `sentence` as the provisional F7 fix. Whether tokens per parallel sentence is *the* single routing/cost number is still A3's question (D-06).
+
+**Step 12, F9: the instrument** (gpt2 vs the Llama-3.2-3B proxy for FLM-4B).
+- F9 is not a config field, so the harness gained `compare_tokenizers(cfg, a, b)`: config fixed, tokenizer swapped. It shares `delta_and_verdict()` with `compare()`.
+- Hand-derived fake-tokenizer test: ratio 0.5 -> 1.5 = +200%. The staleness test now also rebuilds F9 records.
+- **Measured** (`python partA/audit/experiments.py F9 --config v0`, then `--config v1`):
+
+  | config | language | ratio vs eng, gpt2 -> Llama proxy |
+  |---|---|---|
+  | **v0 (the report's own metric)** | toy hin | **5.89 -> 2.08 (−64.6%)** |
+  | v0 | FLORES hin | 6.10 -> 2.11 (−65.4%) |
+  | v0 | FLORES kan | 17.40 -> 11.55 (−33.6%) |
+  | v0 | FLORES tam | 19.40 -> 9.72 (−49.9%) |
+  | **v1 (per sentence)** | FLORES hin | **7.44 -> 2.53 (−66.0%)** |
+  | v1 | FLORES kan | 13.59 -> 8.87 (−34.7%) |
+  | v1 | FLORES tam | 15.48 -> 7.63 (−50.7%) |
+
+  English moves only −3% to +0.3%.
+- **Reading:** the instrument is by far the largest distortion in the audit. With the serving model's tokenizer family, the report's own metric gives Hindi about **2.1×**, not "~6×".
+- Same script, same sentences, different tokenizer: the ratio falls about 3×. That **refutes** REPORT_v0's "a property of the script, not the tokenizer".
+- Per the user's rule (the cost is our model's), this is a **conceptual flaw**.
+- **Caveat:** a proxy, not ground truth. FLM-4B matches Llama-3.2-3B on architecture numbers but not on parameter count (4.2B vs ~3.2B).
+- **Fresh-clone gap found:** F9's results need the *gated* Llama tokenizer, so graders without access would have seen failures. Added a `llama` marker with a skip reason naming the licence page and `hf auth login`, test-first. The results staleness test is now one test per result file, so only the F9 files depend on Llama.
+
+**Step 13, ablation (`audit/ablation.py`, user-specified order).**
+- **Leave-one-out from V1 first**, over the 4 fixes where V1 differs from v0 (F1, F3, F2, F7). F4 and F6 are "fine as written", so V1 keeps v0's behaviour. **Then the cumulative path** v0 -> +F1 -> +F3 -> +F2 -> +F7, on all 3 tokenizers.
+- **Finding the isolated runs could not show: F7 subsumes F1 and F2.** In V1, removing F1 or F2 changes tokens per sentence and every ratio by **exactly 0.00%** (checked numerically, not by rounding), under all 3 tokenizers.
+  - Word splitting is unused once the denominator is the sentence.
+  - Each line's denominator is 1, so line_mean equals total/n.
+  - F2 still moves tok/char by 0.5–1.1%. Pinned by a hand test.
+- **F3 survives** in V1: +3.60 / +1.76 / +1.92% on the hin ratio.
+- **Analytical cross-check:** F7's kan contribution is −26.43% under *all three* tokenizers. It must be, since it equals kan/eng words − 1 = 31,530/42,855 − 1. The ablation passes a check derived independently of the code.
+- A staleness test rebuilds `ablation.json` on all 3 tokenizers.
+
+**`A2_results.md` (`audit/report.py`).** Generated from the committed JSON, sections in the agreed order: each fix alone, then leave-one-out, then cumulative, then the instrument. A staleness test compares it to a fresh render; another checks that quoted numbers come from the JSON.
+
+**`A2_audit.md` (mandatory deliverable).**
+- Every number carries an evidence ID. The index maps each ID to a JSON file and field, and `test_audit_evidence.py` checks all 46 entries plus that every cited ID exists.
+- **Negative check:** changing one value (+2.78% -> +2.79%) and citing a missing ID (E99) both failed the tests, as they should.
+- **My own citation slips while drafting**, caught before any test existed:
+  - F7 cited [E40–E42], but E40/E41 are Hindi corpus counts;
+  - "English moves under 3.1%" had no evidence ID.
+
+  Both were fixed, and E30 was added.
+- **New fact from A1's stats that refutes the report's root cause:** FLORES hin has **5.10 code points per word vs eng 6.00** (256,462/50,250 vs 257,160/42,855). Hindi does *not* have "more Unicode characters per word".
+- **Post-hoc "conclusion changed" rule** (D-14 second half, defined after seeing all metrics, user-pending): F7, F8 and F9 change the report's conclusions; F1–F6 do not.
+
+**Process decision: mutation runs consolidated.** A per-step F9 run would have taken about 2.5 h, because each mutant reruns 17 staleness checks with line-by-line Llama/XLM-R. A second run would then be needed for the ablation/report code. I stopped it (4/4 killed so far) and started one complete run with 49 mutants covering F9, the ablation, the report and the Llama skip, before any of those commits. This changes how long verification takes, not how thorough it is: every commit is still covered by a full run.
+- Result: **49/49 killed** (baseline 148). The 8 tail commits each had a full suite run: 194 passed.
+
+**Fresh-clone check found two real bugs** (2026-10-22).
+1. **Windows MAX_PATH.** `git clone` into a deep folder failed: "Filename too long" on result files named with the full 40-character tokenizer revision (`F8_bytes_hf_FacebookAI_xlm-roberta-base@e73636d4…json`).
+   - The same command printed "194 passed", but that came from the **repo**, not the clone: the failed checkout made `cd` fail. I discarded it as evidence.
+   - Fix, test-first: `result_filename()` uses short labels (gpt2/xlmr/llama). The full pinned spec is still inside each JSON as `"tokenizer"`. The 7 files were renamed with `git mv` (history kept) and the evidence-index paths updated.
+   - A guard test caps every repo-relative path at 80 characters. The longest is now 44.
+2. **A misplaced skip marker, my own editing slip.** Inserting new tests by anchoring on a `def` line had pushed `@pytest.mark.flores` onto a fake-data test. The real corpus-loader test lost it and failed on a fresh copy with FileNotFoundError.
+   - Found by a marker/usage scan (crude, with false positives checked by hand) and fixed.
+- **Genuine deep-path fresh copy** (220-character location, no `.git`, no FLORES text; the location was checked by contents after a `pwd` path-format mismatch fooled my first guard): **139 passed, 57 skipped, 0 failed**.
+- Lessons:
+  - A failed step in a chained command can make later steps run in the wrong place. Check where commands ran.
+  - Inserting before a `def` can steal its decorators. Insert before the decorators.

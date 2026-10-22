@@ -80,6 +80,28 @@ def convention_check(rows: list[dict], spec: dict) -> dict:
             "supported": passing[0] if len(passing) == 1 else None}
 
 
+def identify_reported_formula(rows: list[dict]) -> dict:
+    """Test hypotheses for reported_tok_s against every row. Tolerance = the log's own rounding:
+    +/-0.05 on the rate plus the effect of +/-0.005 s on wall_clock_s."""
+    hyps = {"prompt_plus_gen": lambda r: (r["prompt_len"] + r["gen_len"]) * r["num_requests"],
+            "gen_only": lambda r: r["gen_len"] * r["num_requests"]}
+    out = {}
+    for name, tokens in hyps.items():
+        match = 0
+        for r in rows:
+            pred = tokens(r) / r["wall_clock_s"]
+            tol = 0.05 + pred * 0.005 / r["wall_clock_s"]
+            match += abs(pred - r["reported_tok_s"]) <= tol
+        out[name] = {"rows_matching": match, "rows": len(rows)}
+    return out
+
+
+def timing_inconsistency(rows: list[dict]) -> list[dict]:
+    return [{"batch_size": r["batch_size"], "prompt_len": r["prompt_len"], "wall_s": r["wall_clock_s"],
+             "e2e_p95_s": r["e2e_ms_p95"] / 1000, "e2e_p95_exceeds_wall": r["e2e_ms_p95"] / 1000 > r["wall_clock_s"]}
+            for r in rows]
+
+
 def fit_from_preemption(rows: list[dict]) -> list[dict]:
     """At rows with preemption, the sequences that could stay resident = batch - preempted."""
     return [{"batch_size": r["batch_size"], "preempted_seqs": r["preempted_seqs"],

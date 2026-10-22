@@ -84,6 +84,27 @@ def test_b1_the_log_decides_the_convention_decimal_gb():
     assert chk["supported"] == "decimal"
 
 
+def test_b3_reported_tok_s_counts_prompt_and_generated_tokens_on_every_row():
+    """The misread column: reported_tok_s = (prompt + gen) * requests / wall, within the log's
+    rounding (1 decimal on the rate, 2 on wall-clock). Generated-only fails on every row."""
+    from capacity import identify_reported_formula, load_bench
+
+    res = identify_reported_formula(load_bench())
+    assert res["prompt_plus_gen"]["rows_matching"] == 13
+    assert res["gen_only"]["rows_matching"] == 0
+
+
+def test_b3_e2e_p95_exceeds_the_run_wall_clock_on_12_of_13_rows():
+    """Log-quality observation: with all requests submitted at once, no request can outlast the
+    run, so the latency columns and wall_clock_s cannot share a start point."""
+    from capacity import load_bench, timing_inconsistency
+
+    rows = timing_inconsistency(load_bench())
+    assert sum(r["e2e_p95_exceeds_wall"] for r in rows) == 12
+    b1 = rows[0]
+    assert (b1["batch_size"], b1["wall_s"], b1["e2e_p95_s"]) == (1, 10.94, pytest.approx(12.8637))
+
+
 def test_given_crlf_csv_when_loaded_then_no_carriage_returns_leak_into_values(tmp_path):
     from capacity import load_bench
 

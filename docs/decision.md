@@ -114,6 +114,7 @@ Sources must be real and read; none are cited yet. Where X/Twitter or articles a
   - **Code points:** 1.00–1.17×.
   - **Conclusion:** word and byte denominators distort in different directions for identical content, which supports holding content constant via parallel sentences.
 - **Needs:** experiment with real tokenizers; compare ratios under each denominator. Status: **Provisional — not to be stated as a result.**
+- **Pre-registered for A3 (user-agreed 2026-10-22):** the single number is the tokens-per-parallel-sentence premium vs English, ratio of totals, under the serving tokenizer (Llama-3.2-3B proxy), with a clustered-bootstrap 95% CI. It is reported alongside the per-request-overhead variant and the per-sentence spread. Decided only after A3's evidence.
 
 ## D-07 Part C approach (SFT vs rewriter vs prompting) — Open
 - **Constraints:** 1xA100-80GB for 2 wks; reviewer only for Hindi+Kannada, 10 h/wk (=20 h in the GPU window); launch review in 3 wks; no external API.
@@ -189,6 +190,24 @@ Scope: script and metric (F1–F9), plus an audit of REPORT_v0 §1 claims in `pa
 - **Choice:** `sentence`, because parallel sentences hold content constant (D-06; Petrov et al. §3).
 - **Consequence:** in V1, F1 and F2 contribute exactly 0 (ablation). They matter only for the per-word metric.
 - **Open:** whether this is *the* single routing/cost number is A3's decision. It needs CIs, ≥2 tokenizers, a per-request overhead model and output tokens.
+
+## D-18 A3 design: tokenizers, statistic, uncertainty, scope — Decided (user, 2026-10-22; pre-registered before measurement)
+- **Indic-specific tokenizer, alternatives checked (HF API, 2026-10-22):**
+
+  | Candidate | Licence and access | Notes |
+  |---|---|---|
+  | `ai4bharat/IndicBERTv2-MLM-only` (**chosen**) | MIT, ungated | `tokenizer.json`, 23 Indic languages + English |
+  | `google/muril-base-cased` | Apache-2.0, ungated | WordPiece `vocab.txt` only |
+  | `ai4bharat/indic-bert` | v1, gated (auto) | — |
+  | `sarvamai/sarvam-1` | ungated, but **"Sarvam non-commercial license"** | Generative Indic LM; vendor claims fertility 1.4–2.1 |
+
+  Sarvam-1 is the most decision-relevant comparator (a generative Indic model, the report's "route to an Indic model" option). It was not used because of its non-commercial licence in a company hiring context. It can be added if the user decides the licence is fine for this use.
+- **IndicBERT v2 verified by measurement:**
+  - pinned `8598f13fe52443bc3fc054fcd665944560145b5c`; vocab 250,000; 2 special tokens per sequence;
+  - no normaliser (cased, no NFC);
+  - **0 [UNK]** over all eng/hin/kan/tam FLORES text.
+- **Statistic, CI and scope:** see plan.md Phase 3. Ratio of totals; article-clustered bootstrap (2,000, seed 0); per-sentence median/p10/p90; input tokens + per-request BOS overhead. Output tokens go to A4.
+- **Pre-registered expectation (to check, not assume):** Indic premiums rank IndicBERT < XLM-R < Llama < gpt2. The sentence premium sits between the per-word and per-byte premiums, as A2/F7–F8 suggest.
 
 ## D-17 F9 classification and the FLM-4B proxy — Decided (user rule, 2026-10-21)
 - **Classification:** REPORT_v0 says "Serving Hindi will cost **us**", meaning our model (FLM-4B). By the user's rule, measuring it with gpt2 is a **conceptual flaw**.

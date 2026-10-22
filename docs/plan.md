@@ -68,14 +68,14 @@ Pre-registered 2026-10-23 with the user, **before any Part B computation**.
 - **Process (user-agreed for the remaining parts):** TDD; small commits; the relevant tests before each commit; the full suite before the merge; a targeted mutation check on Part B code. Ask the user at every decision point. Merge locally; no push until the user says.
 
 To-do:
-- [ ] 1. Pre-registration (this section + D-09)
-- [ ] 2. `bench.py` loader (CRLF-safe) + tests
-- [ ] 3. B1 capacity both conventions + two log cross-checks
-- [ ] 4. B3 formula identification + goodput two ways + refutations
-- [ ] 5. B2 anomaly + mechanism + three-option comparison -> **stop for the user's choice**
-- [ ] 6. B4 counter
-- [ ] 7. `results.json`, `answers.md` with evidence index + tests; targeted mutation
-- [ ] 8. Docs; full suite; merge locally
+- [x] 1. Pre-registration (`c3bdd80`)
+- [x] 2. Loader, in `capacity.py` (`6a40b81`)
+- [x] 3. B1 (`0f32c66`): decimal GB supported by the log
+- [x] 4. B3 (`39cba3d`, `4c86038`): goodput 200.92 / 200.93 (user choice B)
+- [x] 5. B2 (`1a5c119`): **user chose (a) cap 24, with (b) fp8 KV as the follow-up**
+- [x] 6. B4 (`7521736`)
+- [x] 7. `results.json` + `answers.md` (`d54974f`); checker covers Part B, targeted 10/10 (`0d6ec1e`)
+- [ ] 8. Docs; full suite; local merge **after user approval**
 
 ### Phase 1 — A1 corpus — branch `part-a-corpus`
 Dependency: network/dataset access (verified). Source: FLORES-200 dev+devtest, 4 languages eng/hin/kan/tam (D-03, user-confirmed).

@@ -5,6 +5,14 @@ _Last updated: 2026-10-22 (A3 complete on `part-a-analysis`; merge into `main` a
 ## Current phase / task
 Phase 3 — **A3 is complete** on branch `part-a-analysis` (from `main` at `c155ad7`, after the A2 merge). Next: the user approves the `--no-ff` merge, then A4 (memo). Order: A1 -> A2 -> A3 -> A4 -> B -> C (D-10).
 
+## Part B outcome (branch `part-b-capacity`; details: `partB/answers.md`)
+- **B1:** 114,688 B/token; about **25** concurrent 4096-token sequences (decimal GB, confirmed by two log checks).
+- **B2:** goodput peaks at b24 then falls with preemption. **Proposed: cap at 24** (+23.8%, from logged data); fp8 KV is the follow-up experiment (D-20).
+- **B3:** `reported_tok_s` counts prompt + gen. Honest b24 goodput is 200.92 / 200.93 tok/s. Log caveat: `e2e_p95` exceeds the wall clock on 12/13 rows.
+- **B4:** `vllm:num_preemptions_total`.
+- **Tests:** partB 68 passed; targeted mutation 10/10. Full suite before the merge.
+- **Merge:** awaiting user approval (local only, no push).
+
 ## A3 outcome (details: `partA/A3_analysis.md`; tables: `partA/A3_results.md`)
 - **Single cost number (D-06, decided on evidence):** tokens per parallel sentence vs English, ratio of totals, serving tokenizer (Llama-3.2-3B proxy):
   - hin **2.53** [2.50, 2.55];

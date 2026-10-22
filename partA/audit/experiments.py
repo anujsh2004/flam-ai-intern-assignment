@@ -26,6 +26,8 @@ THRESHOLD_PCT = 1.0  # D-14, pre-registered
 XLMR = "hf:FacebookAI/xlm-roberta-base@e73636d4f797dec63c3081bb6ed5c7b0bb3f2089"
 # FLM-4B proxy: config matches model_spec.md on all 5 architecture numbers (D-04); gated repo
 LLAMA = "hf:meta-llama/Llama-3.2-3B@13afe5124825b4f3751f836b40dafda64c1ed062"
+# Indic-specific reference for A3 (D-18): MIT, ungated; verified 0 [UNK] on eng/hin/kan/tam FLORES
+INDICBERT = "hf:ai4bharat/IndicBERTv2-MLM-only@8598f13fe52443bc3fc054fcd665944560145b5c"
 # instrument findings: (tokenizer the report used, tokenizer of the model being served)
 TOKENIZER_FINDINGS = {"F9": ("gpt2", LLAMA)}
 CONFIGS = {"v0": v1.V0, "v1": v1.V1}
@@ -122,7 +124,7 @@ def changed_fields(cfg, base=v1.V0) -> dict:
     return {f.name: getattr(cfg, f.name) for f in fields(cfg) if getattr(cfg, f.name) != getattr(base, f.name)}
 
 
-TOKENIZER_LABELS = {"gpt2": "gpt2", XLMR: "xlmr", LLAMA: "llama"}
+TOKENIZER_LABELS = {"gpt2": "gpt2", XLMR: "xlmr", LLAMA: "llama", INDICBERT: "indicbert"}
 
 
 def result_filename(finding: str, tokenizer: str) -> str:

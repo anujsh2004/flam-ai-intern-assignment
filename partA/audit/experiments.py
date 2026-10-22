@@ -122,6 +122,15 @@ def changed_fields(cfg, base=v1.V0) -> dict:
     return {f.name: getattr(cfg, f.name) for f in fields(cfg) if getattr(cfg, f.name) != getattr(base, f.name)}
 
 
+TOKENIZER_LABELS = {"gpt2": "gpt2", XLMR: "xlmr", LLAMA: "llama"}
+
+
+def result_filename(finding: str, tokenizer: str) -> str:
+    """Short, Windows-safe names; the full pinned spec is stored inside the record."""
+    label = TOKENIZER_LABELS.get(tokenizer) or tokenizer.replace("/", "_").replace(":", "_").split("@")[0]
+    return f"{finding}_{label}.json"
+
+
 def result_record(finding: str, tokenizer: str, cfg, res: dict) -> dict:
     """The exact JSON record committed under results/ (rebuilt by the staleness test).
     The variant is stored as its difference from v0, so new Config fields don't churn old records."""
@@ -163,7 +172,7 @@ def main() -> None:
     cfg = FINDINGS[args.finding]
     res = result_record(args.finding, args.tokenizer, cfg,
                         compare(v1.V0, cfg, v1.load_tokenizer(args.tokenizer), load_corpora()))
-    out = HERE / "results" / f"{args.finding}_{args.tokenizer.replace('/', '_').replace(':', '_')}.json"
+    out = HERE / "results" / result_filename(args.finding, args.tokenizer)
     out.parent.mkdir(exist_ok=True)
     out.write_text(json.dumps(res, indent=2) + "\n", encoding="utf-8", newline="\n")
 

@@ -101,6 +101,8 @@ MUTANTS = [
      "| {r['b'][corpus][lang]['fertility_ratio_vs_eng']:.3f} ", "| {r['b'][corpus][lang]['tok_per_char_ratio_vs_eng']:.3f} "),
     ("missing Llama never reported", "partA/testsupport.py",
      "        v1.load_tokenizer(LLAMA)\n    except Exception as exc:", "        pass\n    except Exception as exc:"),
+    ("result filenames use the full pinned spec (MAX_PATH)", "partA/audit/experiments.py",
+     'label = TOKENIZER_LABELS.get(tokenizer) or tokenizer', 'label = tokenizer.replace("/", "_").replace(":", "_") or tokenizer'),
     ("v0 SHA-256 guard disabled", "partA/audit/v0.py", "if got != V0_SHA256:", "if False:"),
     ("F5 tech debt reintroduced in v1", "partA/fertility_v1.py",
      "import argparse\n", "import argparse\nimport random\n\nrandom.seed(1337)\n"),

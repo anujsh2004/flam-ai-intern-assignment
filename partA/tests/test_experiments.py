@@ -53,7 +53,6 @@ def test_given_change_in_one_language_only_when_judged_then_verdicts_exist_per_l
     assert res["threshold_verdict"]["toy"]["by_language_own_metrics"] == {"eng": "material", "hin": "negligible"}
 
 
-@pytest.mark.flores
 def test_given_change_that_only_moves_code_points_then_token_lines_and_any_metric_lines_are_separated():
     """NFC can change len(line) (tok/char's denominator) without changing tokens;
     the audit must not report that as 'tokens changed'."""
@@ -102,6 +101,7 @@ def test_f9_registry_names_gpt2_and_the_pinned_llama_proxy():
     assert LLAMA == "hf:meta-llama/Llama-3.2-3B@13afe5124825b4f3751f836b40dafda64c1ed062"
 
 
+@pytest.mark.flores
 def test_given_real_data_when_corpora_load_then_sizes_match_a1():
     from audit.experiments import load_corpora
 
@@ -120,6 +120,24 @@ def test_given_findings_registry_then_each_variant_differs_from_v0_in_exactly_on
     for name, cfg in FINDINGS.items():
         diff = [f.name for f in fields(v1.Config) if getattr(cfg, f.name) != getattr(v1.V0, f.name)]
         assert len(diff) == 1, (name, diff)
+
+
+def test_given_tokenizer_specs_then_result_files_use_short_labels():
+    """Full pinned specs made Windows paths exceed MAX_PATH on clone; the spec stays inside the JSON."""
+    from audit.experiments import LLAMA, XLMR, result_filename
+
+    assert result_filename("F3", "gpt2") == "F3_gpt2.json"
+    assert result_filename("F3", XLMR) == "F3_xlmr.json"
+    assert result_filename("F9", LLAMA) == "F9_llama.json"
+
+
+def test_given_repo_files_then_every_relative_path_is_short_enough_for_windows():
+    """Leave headroom for a deep clone location under the 260-char MAX_PATH."""
+    root = Path(__file__).resolve().parents[2]
+    skip = {".git", ".venv", "raw", "__pycache__", ".pytest_cache"}
+    too_long = [str(p.relative_to(root)) for p in root.rglob("*")
+                if p.is_file() and not skip & set(p.relative_to(root).parts) and len(str(p.relative_to(root))) > 80]
+    assert too_long == []
 
 
 RESULT_FILES = sorted((Path(__file__).resolve().parents[1] / "audit" / "results").glob("*.json"))

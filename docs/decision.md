@@ -79,7 +79,13 @@ Sources must be real and read; none are cited yet. Where X/Twitter or articles a
   - DeepSeek-V3: ~128.8k–129.3k, sources disagree.
 
   Vocab sizes are close, but neither matches the architecture. Gemma (~256k) and Qwen (~152k) are further away.
-- **Access:** the official `meta-llama/Llama-3.2-3B` repo is gated. Download is pending the user's licence approval. The ungated mirror's `tokenizer.json` will be checked by hash against the official file once access is granted, before any number from it is reported.
+- **Access:** the official `meta-llama/Llama-3.2-3B` repo is gated. **Granted 2026-10-21 (user).**
+  - **Pinned revision:** `13afe5124825b4f3751f836b40dafda64c1ed062`.
+  - **Official `config.json`:** matches all 5 spec numbers; vocab 128,256; tied embeddings.
+  - **`tokenizer.json` SHA-256:** `79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4`.
+  - Adds 1 special token (BOS).
+  - The planned mirror hash-check was dropped, since the official file is used directly.
+- **Other pins:** XLM-R `FacebookAI/xlm-roberta-base@e73636d4f797dec63c3081bb6ed5c7b0bb3f2089`; vocab 250,002; ungated; case-sensitive; precompiled normaliser.
 - **Earlier option list (kept for the record):** baseline `gpt2`/tiktoken (as v0); `cl100k_base`/`o200k_base`; XLM-RoBERTa (SentencePiece, multilingual); an Indic-focused tokenizer (e.g. IndicBERT/MuRIL); Llama-3 / Gemma / Qwen tokenizers (open weights).
 
 ## D-04a (superseded) original D-04 notes
@@ -173,6 +179,21 @@ Scope: script and metric (F1–F9), plus an audit of REPORT_v0 §1 claims in `pa
   - **What changes:** the "report's conclusion unchanged" half of the rule is **not yet operationalised**. It will be defined after all F1–F9 metrics have been seen, then amended in as they are reviewed.
   - **Disclosure:** this half is therefore *post-hoc*, and the audit must say so wherever it is used.
   - **What doesn't change:** the 1% numeric half is unchanged and still pre-registered. Until then the harness reports the 1% half only, at three levels: corpus overall, per language (incl. ratios vs eng), and per language own metrics.
+- **Amendment 2 (2026-10-22, proposed, awaiting user confirmation; post-hoc):**
+  - **Rule:** a fix "changes the report's conclusion" if it changes the Hindi multiplier at the report's own precision (≈6×, nearest integer), or breaks the claims "the two metrics agree" or "a property of the script".
+  - **Applied:** F7, F8 and F9 change the conclusions; F1–F6 do not. F3 moves FLORES gpt2 hin from 6.10 to 6.32, still ≈6×.
+  - **Disclosure:** labelled post-hoc in `partA/A2_audit.md`.
+
+## D-16 V1 denominator = tokens per parallel sentence — Provisional (2026-10-22, autonomous run; for user review)
+- **Problem:** F7 shows tokens per word is not a cost ratio. V1 needs *some* denominator.
+- **Choice:** `sentence`, because parallel sentences hold content constant (D-06; Petrov et al. §3).
+- **Consequence:** in V1, F1 and F2 contribute exactly 0 (ablation). They matter only for the per-word metric.
+- **Open:** whether this is *the* single routing/cost number is A3's decision. It needs CIs, ≥2 tokenizers, a per-request overhead model and output tokens.
+
+## D-17 F9 classification and the FLM-4B proxy — Decided (user rule, 2026-10-21)
+- **Classification:** REPORT_v0 says "Serving Hindi will cost **us**", meaning our model (FLM-4B). By the user's rule, measuring it with gpt2 is a **conceptual flaw**.
+- **Measured with the Llama-3.2-3B proxy (D-04):** hin per-sentence ratio is 7.44 (gpt2) -> 2.53 (proxy), FLORES, V1.
+- **Caveat:** a proxy, not FLM-4B's actual tokenizer (parameter count differs).
 
 ## D-15 Jev (TypeSafe AI hosted classifier) — Rejected for A1–A4/B; pattern noted for Part C (2026-10-21)
 - **What it is:** a hosted, typed classification model (yes/no, choice, ordered score) with claimed calibration. It does not generate text.

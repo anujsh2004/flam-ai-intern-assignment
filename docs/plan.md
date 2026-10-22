@@ -79,7 +79,7 @@ Pre-registered on 2026-10-21, **before any A2 measurement** (see D-13, D-14, D-0
 - `xlm-roberta-base`: for the F3 (lowercase) and F4 (NFC) findings, because their effect depends on tokenizer-internal normalisation.
 - Llama-3.2-3B tokenizer: proxy for FLM-4B, for F9 (D-04).
 
-**Results order:** the reports first give each finding's isolated delta (one fix applied to v0). Next comes the **ablation, leave-one-out**: start from fully corrected v1, switch off one fix at a time, and record each fix's contribution with a note. The **cumulative** path (v0 -> +F1 -> +F3 -> +F4 -> +F2, then the F7 denominator) comes last. All measured tables sit at the end of the reports.
+**Results order:** the reports first give each finding's isolated delta (one fix applied to v0). Next comes the **ablation, leave-one-out**: start from fully corrected v1, switch off one fix at a time, and record each fix's contribution with a note. The **cumulative** path comes last: v0 -> +F1 -> +F3 -> +F2 -> +F7. F4 was dropped from the path because it is fine as written and V1 keeps v0's behaviour for it. All measured tables sit at the end of the reports.
 
 To-do (TDD; one granular commit per step):
 - [x] 1. Housekeeping: state.md records the merge and the branch (`3a5f83d`)
@@ -96,16 +96,16 @@ To-do (TDD; one granular commit per step):
   - mutation check, 19/19 (`59bdddc`).
 
   **Rule for every later step:** rerun `python partA/audit/mutation_check.py` and add mutants for new code.
-- [ ] 6. F3 `--lowercase/--no-lowercase`: test -> code; deltas under gpt2 and XLM-R
-- [ ] 7. F4 `--nfc/--no-nfc`: test -> code; deltas under gpt2 and XLM-R
-- [ ] 8. F2 `--aggregate macro|micro`: test -> code; delta
-- [ ] 9. F5: remove the unused `random` seed; test proves output unchanged
-- [ ] 10. F6 `--special-tokens`: test -> code; delta (possible false-fertility inflation)
-- [ ] 11. F7/F8 `--denominator words|codepoints|graphemes|bytes|sentence` (reuse `partA/units.py`): test -> code; cost-ratio comparison
-- [ ] 12. F9: Llama-3.2-3B proxy vs gpt2 ratios. **FLAGGED (user, 2026-10-21):** HF access is pending. The only blocker is for F9; all other steps proceed.
-- [ ] 13. `run_audit.py`: isolated deltas, leave-one-out ablation, cumulative -> `results.json` + `A2_results.md`; staleness test
-- [ ] 14. `A2_audit.md`: findings in evidence-rule format + REPORT_v0 §1 claim audit
-- [ ] 15. NOTEBOOK / state / plan / decision update; merge to `main` only after approval
+- [x] 6. F3 (`b59dd6f`, `4afb3fd`, `9801958`): material; ratios +3.57% gpt2 / +1.73% XLM-R
+- [x] 7. F4 (`24f478f`, `cd79142`, `07baf4d`): looks suspicious but fine; ≤0.11%
+- [x] 8. F2 (`bbc2603`, `d5c6ccb`, `6c149ec`): material; kan −1.61% / −1.70%. The user chose totals.
+- [x] 9. F5 (`df082a8`): technical debt, proven safe to remove
+- [x] 10. F6 (`f0bc984`, `95f030c`, `a58fd0a`): correct as written; flipping it inflates fertility up to +23.74%
+- [x] 11. F7/F8 (`77736a1`, `a09ca93`): conceptual. F7: hin 6.10 -> 7.18, kan 17.40 -> 13.11. F8: tok/char 2.77–10.89 depending only on the unit.
+- [x] 12. F9: Llama access granted. gpt2 -> Llama proxy, hin per-sentence 7.44 -> 2.53. Committed after the consolidated mutation run.
+- [x] 13. `audit/ablation.py` (leave-one-out, then cumulative, all 3 tokenizers) + `audit/report.py` -> `A2_results.md`, with staleness tests. F7 subsumes F1/F2 in V1.
+- [x] 14. `A2_audit.md`: evidence-rule format, REPORT_v0 §1 claim audit, and an evidence index verified by `test_audit_evidence.py`.
+- [ ] 15. Consolidated mutation run (49 mutants), then commits; NOTEBOOK / state / plan / decision; merge to `main` only after approval.
 
 ### Phase 3 — A3 corrected analysis — branch `part-a-analysis`
 Dependencies: Phases 1-2. Tokenizer comparison per decision D-04 (e.g. gpt2/tiktoken as baseline vs an open Indic-aware tokenizer such as XLM-R, IndicBERT/IndicTrans-family, or Llama/Gemma-class). Denominators: words, grapheme clusters, UTF-8 bytes, per parallel sentence. Bootstrap CIs over sentences. Decide the single routing/cost number (hypothesis: tokens per parallel sentence / per unit of equal content, since parallel text holds meaning constant).

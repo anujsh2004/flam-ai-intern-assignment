@@ -270,3 +270,50 @@ They reuse A1's tested `units.py`, so nothing is reimplemented. Built test-first
 
   The direction can even flip: per byte, XLM-R makes Hindi look cheaper than English. Our reproduction of the report's "two metrics agree" is 5.887 vs 6.998. They share a numerator and differ only through characters-per-word, so they are not independent confirmation. **Conceptual flaw confirmed.**
 - **Decision recorded for user review:** V1's denominator is set to `sentence` as the provisional F7 fix. Whether tokens per parallel sentence is *the* single routing/cost number is still A3's question (D-06).
+
+**Step 12, F9: the instrument** (gpt2 vs the Llama-3.2-3B proxy for FLM-4B).
+- F9 is not a config field, so the harness gained `compare_tokenizers(cfg, a, b)`: config fixed, tokenizer swapped. It shares `delta_and_verdict()` with `compare()`.
+- Hand-derived fake-tokenizer test: ratio 0.5 -> 1.5 = +200%. The staleness test now also rebuilds F9 records.
+- **Measured** (`python partA/audit/experiments.py F9 --config v0`, then `--config v1`):
+
+  | config | language | ratio vs eng, gpt2 -> Llama proxy |
+  |---|---|---|
+  | **v0 (the report's own metric)** | toy hin | **5.89 -> 2.08 (−64.6%)** |
+  | v0 | FLORES hin | 6.10 -> 2.11 (−65.4%) |
+  | v0 | FLORES kan | 17.40 -> 11.55 (−33.6%) |
+  | v0 | FLORES tam | 19.40 -> 9.72 (−49.9%) |
+  | **v1 (per sentence)** | FLORES hin | **7.44 -> 2.53 (−66.0%)** |
+  | v1 | FLORES kan | 13.59 -> 8.87 (−34.7%) |
+  | v1 | FLORES tam | 15.48 -> 7.63 (−50.7%) |
+
+  English moves only −3% to +0.3%.
+- **Reading:** the instrument is by far the largest distortion in the audit. With the serving model's tokenizer family, the report's own metric gives Hindi about **2.1×**, not "~6×".
+- Same script, same sentences, different tokenizer: the ratio falls about 3×. That **refutes** REPORT_v0's "a property of the script, not the tokenizer".
+- Per the user's rule (the cost is our model's), this is a **conceptual flaw**.
+- **Caveat:** a proxy, not ground truth. FLM-4B matches Llama-3.2-3B on architecture numbers but not on parameter count (4.2B vs ~3.2B).
+- **Fresh-clone gap found:** F9's results need the *gated* Llama tokenizer, so graders without access would have seen failures. Added a `llama` marker with a skip reason naming the licence page and `hf auth login`, test-first. The results staleness test is now one test per result file, so only the F9 files depend on Llama.
+
+**Step 13, ablation (`audit/ablation.py`, user-specified order).**
+- **Leave-one-out from V1 first**, over the 4 fixes where V1 differs from v0 (F1, F3, F2, F7). F4 and F6 are "fine as written", so V1 keeps v0's behaviour. **Then the cumulative path** v0 -> +F1 -> +F3 -> +F2 -> +F7, on all 3 tokenizers.
+- **Finding the isolated runs could not show: F7 subsumes F1 and F2.** In V1, removing F1 or F2 changes tokens per sentence and every ratio by **exactly 0.00%** (checked numerically, not by rounding), under all 3 tokenizers.
+  - Word splitting is unused once the denominator is the sentence.
+  - Each line's denominator is 1, so line_mean equals total/n.
+  - F2 still moves tok/char by 0.5–1.1%. Pinned by a hand test.
+- **F3 survives** in V1: +3.60 / +1.76 / +1.92% on the hin ratio.
+- **Analytical cross-check:** F7's kan contribution is −26.43% under *all three* tokenizers. It must be, since it equals kan/eng words − 1 = 31,530/42,855 − 1. The ablation passes a check derived independently of the code.
+- A staleness test rebuilds `ablation.json` on all 3 tokenizers.
+
+**`A2_results.md` (`audit/report.py`).** Generated from the committed JSON, sections in the agreed order: each fix alone, then leave-one-out, then cumulative, then the instrument. A staleness test compares it to a fresh render; another checks that quoted numbers come from the JSON.
+
+**`A2_audit.md` (mandatory deliverable).**
+- Every number carries an evidence ID. The index maps each ID to a JSON file and field, and `test_audit_evidence.py` checks all 46 entries plus that every cited ID exists.
+- **Negative check:** changing one value (+2.78% -> +2.79%) and citing a missing ID (E99) both failed the tests, as they should.
+- **My own citation slips while drafting**, caught before any test existed:
+  - F7 cited [E40–E42], but E40/E41 are Hindi corpus counts;
+  - "English moves under 3.1%" had no evidence ID.
+
+  Both were fixed, and E30 was added.
+- **New fact from A1's stats that refutes the report's root cause:** FLORES hin has **5.10 code points per word vs eng 6.00** (256,462/50,250 vs 257,160/42,855). Hindi does *not* have "more Unicode characters per word".
+- **Post-hoc "conclusion changed" rule** (D-14 second half, defined after seeing all metrics, user-pending): F7, F8 and F9 change the report's conclusions; F1–F6 do not.
+
+**Process decision: mutation runs consolidated.** A per-step F9 run would have taken about 2.5 h, because each mutant reruns 17 staleness checks with line-by-line Llama/XLM-R. A second run would then be needed for the ablation/report code. I stopped it (4/4 killed so far) and started one complete run with 49 mutants covering F9, the ablation, the report and the Llama skip, before any of those commits. This changes how long verification takes, not how thorough it is: every commit is still covered by a full run.

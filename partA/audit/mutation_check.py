@@ -103,6 +103,27 @@ MUTANTS = [
      "        v1.load_tokenizer(LLAMA)\n    except Exception as exc:", "        pass\n    except Exception as exc:"),
     ("result filenames use the full pinned spec (MAX_PATH)", "partA/audit/experiments.py",
      'label = TOKENIZER_LABELS.get(tokenizer) or tokenizer', 'label = tokenizer.replace("/", "_").replace(":", "_") or tokenizer'),
+    # --- A3 (partA/analysis/premium.py) ---
+    ("A3 premium uses per-unit totals the wrong way round", "partA/analysis/premium.py",
+     "return (t_l / u_l) / (t_e / u_e)", "return (u_l / t_l) / (u_e / t_e)"),
+    ("A3 overhead ignored in premium", "partA/analysis/premium.py",
+     't_l = sum(r["tokens"] + overhead for r in lang_rows)', 't_l = sum(r["tokens"] for r in lang_rows)'),
+    ("A3 bootstrap resamples sentences not articles", "partA/analysis/premium.py",
+     "for lr, er, c in zip(lang_rows, eng_rows, clusters):", "for lr, er, c in zip(lang_rows, eng_rows, range(len(lang_rows))):"),
+    ("A3 bootstrap seed ignored", "partA/analysis/premium.py", "rng = random.Random(seed)", "rng = random.Random()"),
+    ("A3 CI bounds use the wrong quantile", "partA/analysis/premium.py",
+     "stats[int(alpha / 2 * n_boot)]", "stats[int(alpha * n_boot)]"),
+    ("A3 spread uses nearest rank not linear", "partA/analysis/premium.py",
+     "return sorted_vals[lo] + (sorted_vals[hi] - sorted_vals[lo]) * (pos - lo)", "return sorted_vals[lo]"),
+    ("A3 table lowercases text (ignores V1)", "partA/analysis/premium.py",
+     "text = v1.measured_text(line, cfg)", "text = line.lower()"),
+    ("A3 sentence table skips NFC", "partA/analysis/premium.py",
+     "for line in v1.prepare(raw_lines, cfg):", "for line in raw_lines:"),
+    ("A3 articles collapse dev and devtest", "partA/analysis/premium.py",
+     "return [f\"{s}:{m['URL']}\" for s in SPLITS for m in read_metadata(s)]",
+     "return [m['URL'] for s in SPLITS for m in read_metadata(s)]"),
+    ("A3 IndicBERT label missing", "partA/audit/experiments.py",
+     'LLAMA: "llama", INDICBERT: "indicbert"}', 'LLAMA: "llama"}'),
     ("v0 SHA-256 guard disabled", "partA/audit/v0.py", "if got != V0_SHA256:", "if False:"),
     ("F5 tech debt reintroduced in v1", "partA/fertility_v1.py",
      "import argparse\n", "import argparse\nimport random\n\nrandom.seed(1337)\n"),
@@ -126,31 +147,54 @@ def run_tests(cwd: Path, tests=TESTS) -> tuple[int, int]:
     return r.returncode, int(m.group(1)) if m else 0
 
 
-def main() -> int:
+def parse_args(argv=None):
+    import argparse
+
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--files", nargs="+", help="targeted run: only mutants in these files (default: all)")
+    ap.add_argument("--names", nargs="+", help="targeted run: only mutants whose name starts with one of these")
+    ap.add_argument("--tests", nargs="+", help="targeted run: only these test files (default: all A2/A3 tests)")
+    return ap.parse_args(argv)
+
+
+def select(args) -> tuple[list, list]:
+    """Full run by default. A targeted run is a speed trade-off: it misses
+    cross-module test gaps, so a full run is the final gate (user decision, A3)."""
+    mutants = [m for m in MUTANTS
+               if (not args.files or m[1] in args.files)
+               and (not args.names or any(m[0].startswith(p) for p in args.names))]
+    return mutants, (args.tests or TESTS)
+
+
+def main(argv=None) -> int:
+    mutants, tests = select(parse_args(argv))
+    if not mutants:
+        print("no mutants selected")
+        return 1
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)
         shutil.copytree(ROOT / "partA", work / "partA",
                         ignore=shutil.ignore_patterns("raw", "__pycache__", ".pytest_cache"))
         shutil.copytree(ROOT / "starter_kit", work / "starter_kit")
-        code, baseline = run_tests(work)
-        print(f"baseline: exit {code}, {baseline} passed")
+        code, baseline = run_tests(work, tests)
+        print(f"baseline: exit {code}, {baseline} passed ({len(mutants)} mutants, {len(tests)} test files)")
         if code != 0:
             print("baseline must be green first")
             return 1
         survivors = []
-        for name, rel, old, new in MUTANTS:
+        for name, rel, old, new in mutants:
             f = work / rel
             orig = f.read_text(encoding="utf-8")
             if orig.count(old) != 1:
                 raise SystemExit(f"mutant {name!r}: snippet found {orig.count(old)} times in {rel}")
             f.write_text(orig.replace(old, new), encoding="utf-8", newline="\n")
-            code, passed = run_tests(work)
+            code, passed = run_tests(work, tests)
             f.write_text(orig, encoding="utf-8", newline="\n")
             killed = code != 0 or passed < baseline
             print(f"{'KILLED  ' if killed else 'SURVIVED'} {name}  (exit {code}, {passed} passed)")
             if not killed:
                 survivors.append(name)
-        print(f"\nmutation score: {len(MUTANTS) - len(survivors)}/{len(MUTANTS)} killed")
+        print(f"\nmutation score: {len(mutants) - len(survivors)}/{len(mutants)} killed")
         for s in survivors:
             print(f"  survivor: {s}")
         return 1 if survivors else 0

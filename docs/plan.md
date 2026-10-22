@@ -108,8 +108,33 @@ To-do (TDD; one granular commit per step):
 - [x] 15. Consolidated mutation run (50/50), commits, docs; merge into `main` approved by the user (2026-10-22).
 - **Deferred by the user:** `AI_USAGE.md` will be written at the end (Phase 7, finalize).
 
-### Phase 3 — A3 corrected analysis — branch `part-a-analysis`
-Dependencies: Phases 1-2. Tokenizer comparison per decision D-04 (e.g. gpt2/tiktoken as baseline vs an open Indic-aware tokenizer such as XLM-R, IndicBERT/IndicTrans-family, or Llama/Gemma-class). Denominators: words, grapheme clusters, UTF-8 bytes, per parallel sentence. Bootstrap CIs over sentences. Decide the single routing/cost number (hypothesis: tokens per parallel sentence / per unit of equal content, since parallel text holds meaning constant).
+### Phase 3 — A3 corrected analysis — branch `part-a-analysis` (from `main` at `c155ad7`)
+Pre-registered on 2026-10-22, **before any A3 measurement** (D-18, D-06). Design agreed with the user:
+- **Corpus:** FLORES eng/hin/kan/tam, 2,009 parallel sentences (A1). Text prepared as V1: as served, NFC, no lowercasing.
+- **Tokenizers (4, pinned):**
+  - gpt2 (the report's instrument);
+  - **Llama-3.2-3B** (FLM-4B proxy, the serving instrument);
+  - XLM-R (multilingual);
+  - **IndicBERT v2** (Indic-specific, `ai4bharat/IndicBERTv2-MLM-only@8598f13f`). Verified: 0 [UNK] on all 4 languages, cased, no normaliser.
+- **Denominators (5):** words, code points, grapheme clusters, UTF-8 bytes, **parallel sentence**. The same tokens are divided differently.
+- **Statistic:** premium vs English = ratio of totals, (ΣT_lang/ΣU_lang) / (ΣT_eng/ΣU_eng). For sentences this is ΣT_lang / ΣT_eng.
+- **Uncertainty:** 95% percentile CI from an article-clustered bootstrap, 2,000 resamples, seed 0. The sentence case must equal `units.cluster_bootstrap_ratio`, as a cross-check.
+- **Spread:** distribution of per-sentence premiums T_lang,i / T_eng,i: median, p10, p90.
+- **Cost model scope (user):** input tokens plus per-request overhead (the serving tokenizer's BOS, 1 token, with one sentence per request as the worst case). Output tokens are left to the A4 memo, with a stated assumption.
+- **Single number (pre-registered recommendation, D-06):** the tokens-per-parallel-sentence premium vs English under the serving tokenizer (Llama proxy), ratio of totals, with its CI.
+- **Deliverables:** `partA/A3_analysis.md` (reasoning, evidence index verified by a test) and `partA/A3_results.md` (generated, with a staleness test).
+- **Process:** same as A2. TDD, granular commits, a full suite before each commit, a full mutation run covering the new code, docs at the end, merge after approval.
+
+To-do:
+- [x] 1. Pre-registration (`6f2300e`)
+- [x] 2–3. IndicBERT v2 registered; `analysis/premium.py` with hand-derived tests and the cross-check vs A1's bootstrap (`e389572`)
+- [x] 4. `analysis/results.json` + staleness test (`c0b7f2f`)
+- [x] 5. `analysis/report.py` -> `A3_results.md`, with a staleness test
+- [x] 6. `A3_analysis.md` with evidence index + test (negative check passes)
+- [x] 7. Mutation: **targeted** run on A3 code (user decision, D-19): 12/12. Full run deferred to the final gate.
+- [x] 8. Docs; merge into `main` approved by the user (2026-10-22)
+- ~~Final gate: full mutation run~~ **waived by the user** (D-19, risk accepted)
+- Carry to A4: commit the vocabulary-coverage measurement (why kan/tam are costlier) as a tested script.
 
 ### Phase 4 — A4 memo — branch `part-a-memo`: 1 page, numbers pulled from generated results.
 

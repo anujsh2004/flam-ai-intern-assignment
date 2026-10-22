@@ -30,3 +30,8 @@ F9 and the ablation use the gated `meta-llama/Llama-3.2-3B` tokenizer: accept it
   python -m pytest partA/tests                    # full suite, incl. staleness checks of every committed number
   python partA/audit/mutation_check.py            # does every planted bug get caught?
   ```
+- **A3 analysis:** `partA/A3_analysis.md` (the single cost number and why), `partA/A3_results.md` (generated tables)
+  ```
+  python partA/analysis/premium.py && python partA/analysis/report.py
+  python partA/audit/mutation_check.py --names A3 --tests partA/tests/test_premium.py partA/tests/test_a3_report.py partA/tests/test_a3_evidence.py
+  ```

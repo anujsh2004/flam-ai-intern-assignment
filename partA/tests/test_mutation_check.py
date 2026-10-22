@@ -17,6 +17,22 @@ def test_given_current_code_then_every_mutant_snippet_occurs_exactly_once():
     assert stale == []
 
 
+def test_given_targeted_options_then_only_mutants_in_those_files_and_those_tests_are_used():
+    """Targeted run (user request, A3): mutants filtered by file, tests by path; default stays full."""
+    from audit.mutation_check import MUTANTS, TESTS, parse_args, select
+
+    full = select(parse_args([]))
+    assert full == (MUTANTS, TESTS)
+    mutants, tests = select(parse_args(["--files", "partA/analysis/premium.py", "--tests", "partA/tests/test_premium.py"]))
+    assert mutants and all(rel == "partA/analysis/premium.py" for _, rel, _, _ in mutants)
+    assert tests == ["partA/tests/test_premium.py"]
+    # by name prefix: picks A3 mutants across files without pulling in A2 mutants of the same file
+    mutants, _ = select(parse_args(["--names", "A3", "--tests", "partA/tests/test_premium.py"]))
+    assert mutants and all(name.startswith("A3") for name, _, _, _ in mutants)
+    assert {rel for _, rel, _, _ in mutants} == {"partA/analysis/premium.py", "partA/analysis/report.py",
+                                                 "partA/audit/experiments.py"}
+
+
 def test_given_failing_test_with_devanagari_output_when_run_then_counts_are_parsed(tmp_path, monkeypatch):
     from audit.mutation_check import run_tests
 

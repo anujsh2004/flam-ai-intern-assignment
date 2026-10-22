@@ -330,3 +330,56 @@ They reuse A1's tested `units.py`, so nothing is reimplemented. Built test-first
 - Lessons:
   - A failed step in a chained command can make later steps run in the wrong place. Check where commands ran.
   - Inserting before a `def` can steal its decorators. Insert before the decorators.
+
+## 2026-10-22 — A3: the corrected cross-language analysis
+
+**Pre-registered first** (`6f2300e`). Design, the single number, and expected outcomes (D-18).
+
+**Picking the Indic-specific tokenizer, by checking rather than assuming.**
+- Checked via the HF API:
+  - IndicBERT v2: MIT, ungated, `tokenizer.json`;
+  - MuRIL: Apache-2.0, `vocab.txt` only;
+  - indic-bert v1: gated;
+  - Sarvam-1: a generative Indic LM, the most decision-relevant, but under a **non-commercial licence**, so not used in a hiring context (flagged for the user).
+- IndicBERT v2 verified: no normaliser (cased); **0 [UNK]** on all 4 FLORES languages. A tokenizer emitting [UNK] would look falsely cheap.
+
+**Module** (`analysis/premium.py`, test-first).
+- Ratio-of-totals premium over 5 denominators, a per-request overhead variant, per-sentence spread, and an article-clustered bootstrap.
+- The bootstrap mirrors A1's `units.cluster_bootstrap_ratio` exactly, and a test asserts both give identical intervals on shared data, as an independent cross-check.
+
+**Results** (Llama proxy, per parallel sentence):
+- hin **2.53** [2.50, 2.55], kan **8.87** [8.77, 8.96], tam **7.63** [7.55, 7.71];
+- IndicBERT 1.17 / 1.10 / 1.05; gpt2 7.44 / 13.59 / 15.48.
+
+**Checked against pre-registration.**
+- The tokenizer ranking held for every language.
+- My prediction "the sentence premium sits between word and byte" was **wrong for Hindi** (7.44 > 6.34 under gpt2), because Hindi uses 1.17× English's words. Recorded as wrong, not explained away.
+
+**Biggest substantive insight.** On the serving tokenizer, the cost problem is **Dravidian**: kan and tam are about 3× Hindi's premium. REPORT_v0's single "Indic" class hides this. It matters for A4's routing.
+
+**Same tokens, different denominator** (Llama, hin): per word 2.16, per code point 2.53, per grapheme 3.86, per byte **0.99**. Per byte says Hindi is cheaper than English, which is false for token cost.
+- Per code point matches per sentence for Hindi only because hin and eng use about the same number of code points for the same content (A1: 1.00×). It does not transfer to kan or tam.
+
+**Mutation testing, targeted** (user decision on time; D-19).
+- The first targeted run found **3 survivors**:
+  - seed use untested: with only 4 clusters, every seed lands on the same percentiles;
+  - lowercasing invisible to a case-blind fake tokenizer;
+  - article-id prefix: an **equivalent mutant on this data**, with 0 URLs in both dev and devtest (measured).
+- All closed: 10/10, then 12/12 with the report mutants.
+- My first targeting attempt selected by file and dragged in A2's slow mutants; I stopped it and selected by name.
+
+**Why the Dravidian premiums are higher (user question; quick measurement, to be committed as a script in A4).**
+- Llama-3.2-3B over all FLORES text:
+
+  | lang | code points vs eng | tokens per code point | byte-fragment tokens |
+  |---|---|---|---|
+  | eng | 1.00 | 0.21 | 0.0% |
+  | hin | 1.00 | 0.52 | 0.2% |
+  | kan | 1.05 | **1.74** | **98.1%** |
+  | tam | 1.17 | **1.35** | **89.2%** |
+
+- Byte-fragment = the token does not decode to whole characters.
+- Length explains little. **Vocabulary coverage** explains most: the Llama-3 vocabulary has Devanagari pieces (Hindi is officially supported) but almost none for Kannada/Tamil, so they fall back to UTF-8 bytes.
+- The same Kannada text is 1.10× under IndicBERT, so the cause is the vocabulary, not the script.
+
+**Write-up.** `A3_analysis.md` has an evidence index of 28 IDs, verified by a test. Negative check: a changed value (A4 8.87 -> 8.88) and a missing ID (A99) both fail.

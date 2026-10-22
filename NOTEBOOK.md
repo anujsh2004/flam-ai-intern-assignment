@@ -317,3 +317,16 @@ They reuse A1's tested `units.py`, so nothing is reimplemented. Built test-first
 - **Post-hoc "conclusion changed" rule** (D-14 second half, defined after seeing all metrics, user-pending): F7, F8 and F9 change the report's conclusions; F1–F6 do not.
 
 **Process decision: mutation runs consolidated.** A per-step F9 run would have taken about 2.5 h, because each mutant reruns 17 staleness checks with line-by-line Llama/XLM-R. A second run would then be needed for the ablation/report code. I stopped it (4/4 killed so far) and started one complete run with 49 mutants covering F9, the ablation, the report and the Llama skip, before any of those commits. This changes how long verification takes, not how thorough it is: every commit is still covered by a full run.
+- Result: **49/49 killed** (baseline 148). The 8 tail commits each had a full suite run: 194 passed.
+
+**Fresh-clone check found two real bugs** (2026-10-22).
+1. **Windows MAX_PATH.** `git clone` into a deep folder failed: "Filename too long" on result files named with the full 40-character tokenizer revision (`F8_bytes_hf_FacebookAI_xlm-roberta-base@e73636d4…json`).
+   - The same command printed "194 passed", but that came from the **repo**, not the clone: the failed checkout made `cd` fail. I discarded it as evidence.
+   - Fix, test-first: `result_filename()` uses short labels (gpt2/xlmr/llama). The full pinned spec is still inside each JSON as `"tokenizer"`. The 7 files were renamed with `git mv` (history kept) and the evidence-index paths updated.
+   - A guard test caps every repo-relative path at 80 characters. The longest is now 44.
+2. **A misplaced skip marker, my own editing slip.** Inserting new tests by anchoring on a `def` line had pushed `@pytest.mark.flores` onto a fake-data test. The real corpus-loader test lost it and failed on a fresh copy with FileNotFoundError.
+   - Found by a marker/usage scan (crude, with false positives checked by hand) and fixed.
+- **Genuine deep-path fresh copy** (220-character location, no `.git`, no FLORES text; the location was checked by contents after a `pwd` path-format mismatch fooled my first guard): **139 passed, 57 skipped, 0 failed**.
+- Lessons:
+  - A failed step in a chained command can make later steps run in the wrong place. Check where commands ran.
+  - Inserting before a `def` can steal its decorators. Insert before the decorators.

@@ -179,12 +179,12 @@ Scope: script and metric (F1–F9), plus an audit of REPORT_v0 §1 claims in `pa
   - **What changes:** the "report's conclusion unchanged" half of the rule is **not yet operationalised**. It will be defined after all F1–F9 metrics have been seen, then amended in as they are reviewed.
   - **Disclosure:** this half is therefore *post-hoc*, and the audit must say so wherever it is used.
   - **What doesn't change:** the 1% numeric half is unchanged and still pre-registered. Until then the harness reports the 1% half only, at three levels: corpus overall, per language (incl. ratios vs eng), and per language own metrics.
-- **Amendment 2 (2026-10-22, proposed, awaiting user confirmation; post-hoc):**
+- **Amendment 2 (2026-10-22; post-hoc; ACCEPTED by user 2026-10-22):**
   - **Rule:** a fix "changes the report's conclusion" if it changes the Hindi multiplier at the report's own precision (≈6×, nearest integer), or breaks the claims "the two metrics agree" or "a property of the script".
   - **Applied:** F7, F8 and F9 change the conclusions; F1–F6 do not. F3 moves FLORES gpt2 hin from 6.10 to 6.32, still ≈6×.
   - **Disclosure:** labelled post-hoc in `partA/A2_audit.md`.
 
-## D-16 V1 denominator = tokens per parallel sentence — Provisional (2026-10-22, autonomous run; for user review)
+## D-16 V1 denominator = tokens per parallel sentence — Decided for V1 (user confirmed 2026-10-22); the single cost number is still decided in A3
 - **Problem:** F7 shows tokens per word is not a cost ratio. V1 needs *some* denominator.
 - **Choice:** `sentence`, because parallel sentences hold content constant (D-06; Petrov et al. §3).
 - **Consequence:** in V1, F1 and F2 contribute exactly 0 (ablation). They matter only for the per-word metric.

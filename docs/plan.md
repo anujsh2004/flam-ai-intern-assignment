@@ -105,7 +105,8 @@ To-do (TDD; one granular commit per step):
 - [x] 12. F9: Llama access granted. gpt2 -> Llama proxy, hin per-sentence 7.44 -> 2.53. Committed after the consolidated mutation run.
 - [x] 13. `audit/ablation.py` (leave-one-out, then cumulative, all 3 tokenizers) + `audit/report.py` -> `A2_results.md`, with staleness tests. F7 subsumes F1/F2 in V1.
 - [x] 14. `A2_audit.md`: evidence-rule format, REPORT_v0 §1 claim audit, and an evidence index verified by `test_audit_evidence.py`.
-- [ ] 15. Consolidated mutation run (49 mutants), then commits; NOTEBOOK / state / plan / decision; merge to `main` only after approval.
+- [x] 15. Consolidated mutation run (50/50), commits, docs; merge into `main` approved by the user (2026-10-22).
+- **Deferred by the user:** `AI_USAGE.md` will be written at the end (Phase 7, finalize).
 
 ### Phase 3 — A3 corrected analysis — branch `part-a-analysis`
 Dependencies: Phases 1-2. Tokenizer comparison per decision D-04 (e.g. gpt2/tiktoken as baseline vs an open Indic-aware tokenizer such as XLM-R, IndicBERT/IndicTrans-family, or Llama/Gemma-class). Denominators: words, grapheme clusters, UTF-8 bytes, per parallel sentence. Bootstrap CIs over sentences. Decide the single routing/cost number (hypothesis: tokens per parallel sentence / per unit of equal content, since parallel text holds meaning constant).

@@ -45,10 +45,8 @@ Phase 2 — **A2 is complete** on branch `part-a-audit` (from `main` at `48f28fe
 
 ## Decisions
 - **Decided:** D-01 (ack pending), D-02, D-03, D-04 (pins and hashes), D-05, D-08, D-10, D-11, D-12, D-13, D-14 (+ amendment 1), D-15, D-17.
-- **Provisional / awaiting the user:**
-  - D-06: the single cost number, for A3.
-  - D-14 amendment 2: the post-hoc "conclusion changed" rule.
-  - D-16: V1 uses the sentence denominator.
+- **User-confirmed 2026-10-22:** D-14 amendment 2 (post-hoc conclusion rule) and D-16 (V1 sentence denominator).
+- **Provisional:** D-06, the single cost number, for A3.
 - **Open:** D-07 (Part C), D-09 (B1 GB vs GiB).
 
 ## Environment facts (checked)
@@ -57,10 +55,13 @@ Phase 2 — **A2 is complete** on branch `part-a-audit` (from `main` at `48f28fe
 - **Git:** `core.autocrlf=true`; overridden by `.gitattributes`.
 - **Windows MAX_PATH:** repo paths are capped at 80 characters by a test.
 
-## Open questions for the user
-1. Approve the `--no-ff` merge of `part-a-audit` into `main`?
-2. Confirm D-14 amendment 2 (post-hoc conclusion rule) and D-16 (V1 sentence denominator), or revise them.
-3. D-01 layout acknowledgement; whether to restore `AI_USAGE.md` before submission.
+## User answers (2026-10-22)
+1. Merge approved; done as a `--no-ff` merge into `main` (see the git log).
+2. D-14 amendment 2 accepted.
+3. D-16 confirmed.
+4. `AI_USAGE.md` will be written at the end (Phase 7).
+
+Still open: D-01 layout acknowledgement.
 
 ## Next steps
 A3 on `part-a-analysis`:

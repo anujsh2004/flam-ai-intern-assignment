@@ -75,7 +75,7 @@ To-do:
 - [x] 5. B2 (`1a5c119`): **user chose (a) cap 24, with (b) fp8 KV as the follow-up**
 - [x] 6. B4 (`7521736`)
 - [x] 7. `results.json` + `answers.md` (`d54974f`); checker covers Part B, targeted 10/10 (`0d6ec1e`)
-- [ ] 8. Docs; full suite; local merge **after user approval**
+- [x] 8. Docs; full suite; local merge after user approval (`fc2a4a5`)
 
 ### Phase 1 — A1 corpus — branch `part-a-corpus`
 Dependency: network/dataset access (verified). Source: FLORES-200 dev+devtest, 4 languages eng/hin/kan/tam (D-03, user-confirmed).
@@ -173,7 +173,7 @@ Agreed with the user 2026-10-23, before writing:
 To-do:
 - [x] 1. `coverage.py` + tests + `coverage.json` (`7e45f1b`)
 - [x] 2. `partA/A4_memo.md`: 543 words, all 18 numbers checked against the JSON
-- [ ] 3. Docs; full suite; local merge after user approval
+- [x] 3. Docs; full suite; local merge after user approval (`f68e25a`)
 - **Reminder owed to the user afterwards:** offer the defense cheat sheet.
 
 ### Phase 6 — C memo — branch `part-c-memo` (from `main` at `fc2a4a5`)
@@ -191,7 +191,7 @@ To-do:
 - [x] 1. Pre-registration (`27d44f1`)
 - [x] 2. `partC/arithmetic.py` + tests (`6204ac0`)
 - [x] 3. `partC/memo.md`, 666 words, with all 15 numbers checked against `results.json`
-- [ ] 4. Docs; full suite; local merge after user approval
+- [x] 4. Docs; full suite; local merge after user approval (`dfeace8`)
 
 ### Phase 7 — Finish — branch `finalize`
 README with exact reproduce commands; NOTEBOOK.md complete with dead ends; defense prep (re-derive each number from scratch; practice live flag addition).

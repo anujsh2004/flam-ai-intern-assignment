@@ -471,3 +471,12 @@ They reuse A1's tested `units.py`, so nothing is reimplemented. Built test-first
 - **README rewritten** as a deliverables map in assignment order, with setup and one command block per part.
 - **`state.md` rewritten** as the final record.
 - `AI_USAGE.md` is left to the author, as agreed. A test checks the sections are in order, the length is within a page, and all 15 quoted numbers are generated from `results.json`. Negative check: a changed value (A4 8.87 -> 8.88) and a missing ID (A99) both fail.
+
+## 2026-10-23 — Submission check against the brief
+
+- **Re-read the brief's requirements one by one.** Every deliverable was present, but the **evidence rule** was not applied in full: F4, F5, F6 and F8 in `A2_audit.md` lacked the brief's before/after numbers and one-sentence "why the delta proves it"; F5 also lacked its command.
+  - Fixed from the committed results (evidence IDs E48–E56). A test now requires the full triplet in all 9 findings; it failed on 6 sections first, because F7/F9 used different labels.
+- **User decisions:**
+  - keep the repo-root layout, with the README stating it is the brief's `your-submission/`;
+  - trim `AI_USAGE.md` to a short summary (1,628 -> 408 words), since the brief asks for "short";
+  - tighten the Part C memo to ≤ 550 words (666 -> 547), with the length enforced by its test.

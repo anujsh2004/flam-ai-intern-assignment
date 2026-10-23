@@ -18,7 +18,7 @@ def test_memo_has_the_five_labelled_sections_in_order():
 
 
 def test_memo_is_about_one_page():
-    assert len(re.findall(r"\S+", MEMO)) <= 700
+    assert len(re.findall(r"\S+", MEMO)) <= 550  # user: 500-550 words
 
 
 EXPECTED = {

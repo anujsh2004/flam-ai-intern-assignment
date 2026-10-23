@@ -419,4 +419,27 @@ They reuse A1's tested `units.py`, so nothing is reimplemented. Built test-first
 **Verification.**
 - 44 evidence IDs in `answers.md` are checked against `results.json`.
 - **Mutation-checker gap found:** it copied only `partA/`, so Part B could never be mutated. Fixed.
-- Targeted Part B run: 9/10 at first. The survivor, "anomaly peak from the reported column", is **equivalent on the real log**: within one prompt-length sweep the reported column is exactly 8× goodput. It is pinned by an intent test with synthetic rows where the two disagree. Result: **10/10**. Negative check: a changed value (A4 8.87 -> 8.88) and a missing ID (A99) both fail.
+- Targeted Part B run: 9/10 at first. The survivor, "anomaly peak from the reported column", is **equivalent on the real log**: within one prompt-length sweep the reported column is exactly 8× goodput. It is pinned by an intent test with synthetic rows where the two disagree. Result: **10/10**.
+
+## 2026-10-23 — Part C: decision memo
+
+**Pre-registered with the user before writing:**
+- Prompt-only is the launch path; LoRA SFT on synthetic pairs is the fallback; the rewriter is rejected.
+- Launch hi+kn; monitor te/ta/bn/mr automatically until native validation.
+- Metric: ≥70% casual and ≥95% meaning (n=200).
+- Kill criteria: day 5 / 50% and day 12 / 70%.
+- Reviewer at 60/h, with 30/90 sensitivity.
+
+**User questions answered with reasoning** (assumptions labelled, not claimed as facts):
+- *Why assume FLM-4B on the L4 stack?* Same company, same "our" stack, and the brief names no other model.
+- *Why these thresholds?* 70% keeps the 95% CI lower bound (≈64%) a clear majority, while 90% would chase one reviewer's taste. 95% meaning reflects that wrong answers cost more than tone.
+- *Why day 5 / day 12?* A week's reviewer budget screens 2–3 variants, and switching on day 5 leaves 9 GPU days.
+- *Why ~60/h, not 100?* 36 s is too fast to read two native replies carefully.
+
+**Arithmetic as tested code** (`partC/arithmetic.py`; the A3 premiums are *read* from `partA/analysis/results.json`, not retyped):
+- Reviewer: 20 h = 600 / 1,200 / 1,800 judgements. The plan fits at 60/h, not at 30/h; the memo states what to cut.
+- SFT: 506 / 1,774 tokens per pair (hin/kan). The A3 premium makes Kannada training data 3.5× longer than Hindi's for the same content. 13.7M tokens is about 0.8 GPU-h of LoRA. Full FT needs 67.2 GB of states, so LoRA.
+- Rewriter: +24% decode work per request, about 19% fewer requests per L4. Part B shows that stack is already capacity-bound.
+- **Cross-part link:** Part A's premiums and Part B's capacity limit both feed the Part C decision.
+
+**Memo:** 666 words, with the 5 labelled sections. A test checks the sections are in order, the length is within a page, and all 15 quoted numbers are generated from `results.json`. Negative check: a changed value (A4 8.87 -> 8.88) and a missing ID (A99) both fail.

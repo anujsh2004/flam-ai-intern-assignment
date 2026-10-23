@@ -176,10 +176,10 @@ Pre-registered 2026-10-23 with the user, before writing the memo.
 - **Assumption:** the assistant is FLM-4B-Instruct on Part B's 1× L4 stack (same company, same stack; the brief names no other model). Labelled in the memo.
 
 To-do:
-- [ ] 1. Pre-registration (this section + D-07)
-- [ ] 2. `partC/arithmetic.py` + tests: reviewer capacity and sensitivity, SFT data/token/GPU-time, rewriter serving overhead, CI widths for the thresholds
-- [ ] 3. `partC/memo.md` (1 page) + test that its numbers match the arithmetic
-- [ ] 4. Docs; relevant tests; full suite before the merge; local merge after user approval
+- [x] 1. Pre-registration (`27d44f1`)
+- [x] 2. `partC/arithmetic.py` + tests (`6204ac0`)
+- [x] 3. `partC/memo.md`, 666 words, with all 15 numbers checked against `results.json`
+- [ ] 4. Docs; full suite; local merge after user approval
 
 ### Phase 7 — Finish — branch `finalize`
 README with exact reproduce commands; NOTEBOOK.md complete with dead ends; defense prep (re-derive each number from scratch; practice live flag addition).

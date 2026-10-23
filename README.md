@@ -36,6 +36,7 @@ F9 and the ablation use the gated `meta-llama/Llama-3.2-3B` tokenizer: accept it
   python partB/capacity.py && python -m pytest partB/tests
   python partA/audit/mutation_check.py --names "B:" --tests partB/tests/test_capacity.py partB/tests/test_answers_evidence.py
   ```
+- **A4 memo:** `partA/A4_memo.md` (coverage evidence: `python partA/analysis/coverage.py`)
 - **A3 analysis:** `partA/A3_analysis.md` (the single cost number and why), `partA/A3_results.md` (generated tables)
   ```
   python partA/analysis/premium.py && python partA/analysis/report.py

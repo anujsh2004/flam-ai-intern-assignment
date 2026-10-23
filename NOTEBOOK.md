@@ -442,4 +442,19 @@ They reuse A1's tested `units.py`, so nothing is reimplemented. Built test-first
 - Rewriter: +24% decode work per request, about 19% fewer requests per L4. Part B shows that stack is already capacity-bound.
 - **Cross-part link:** Part A's premiums and Part B's capacity limit both feed the Part C decision.
 
-**Memo:** 666 words, with the 5 labelled sections. A test checks the sections are in order, the length is within a page, and all 15 quoted numbers are generated from `results.json`. Negative check: a changed value (A4 8.87 -> 8.88) and a missing ID (A99) both fail.
+**Memo:** 666 words, with the 5 labelled sections.
+
+## 2026-10-23 — A4: recommendation memo
+
+**Re-checks the user asked for, before writing.**
+- **Biggest caveat:** ranked by *measured* sensitivity × likelihood. The proxy tokenizer stays first: it moves Hindi 1.17×–7.44× and Kannada 1.10×–13.59×, and FLM-4B's parameter count (4.2B vs ≈3.2B) shows it is a different model.
+  - The traffic-domain mismatch (chat, code-mixed, romanised) is likely but **unmeasured**. Calling it "biggest" would break the evidence rule, so it is listed second and labelled as such.
+- **Production metric, a flaw found in my earlier proposal:** "tokens per request vs English" cannot work in production, because live traffic has no parallel English.
+  - Replaced (user-agreed) by **tokens per code point by language and script vs the FLORES baseline**, alerting at ±20% weekly. Within one language and script it does not depend on length.
+  - It is not a contradiction of A2/F8, which rejected per-character units for *comparing* languages, not for *tracking* one.
+
+**Coverage evidence** (`analysis/coverage.py`, committed `7e45f1b`).
+- Reproduces the earlier quick measurement exactly: Llama kan 1.741 tok/code point with 98.1% byte fragments, tam 1.346 / 89.2%, hin 0.522 / 0.2%.
+- **New:** gpt2 also falls back to bytes for **Hindi** (94.5%), which explains the report's inflated Hindi number. XLM-R and IndicBERT have 0% fragments everywhere.
+
+**Memo:** 543 words with the 4 required parts. A test checks the order, the length and all 18 quoted numbers against the A3 results, the coverage JSON and the A2 F9 JSON. A test checks the sections are in order, the length is within a page, and all 15 quoted numbers are generated from `results.json`. Negative check: a changed value (A4 8.87 -> 8.88) and a missing ID (A99) both fail.

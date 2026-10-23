@@ -1,0 +1,136 @@
+{
+  "by_tokenizer": {
+    "gpt2": {
+      "spec": "gpt2",
+      "by_lang": {
+        "eng": {
+          "codepoints": 257160,
+          "tokens": 52785,
+          "tokens_per_codepoint": 0.2052613159122725,
+          "fragment_share": 0.0023491522212749833,
+          "codepoints_vs_eng": 1.0
+        },
+        "hin": {
+          "codepoints": 256675,
+          "tokens": 392516,
+          "tokens_per_codepoint": 1.5292334664458946,
+          "fragment_share": 0.944562769415769,
+          "codepoints_vs_eng": 0.9981140146212475
+        },
+        "kan": {
+          "codepoints": 269776,
+          "tokens": 717138,
+          "tokens_per_codepoint": 2.6582720479212383,
+          "fragment_share": 0.9501044429384582,
+          "codepoints_vs_eng": 1.0490589516254472
+        },
+        "tam": {
+          "codepoints": 300257,
+          "tokens": 817334,
+          "tokens_per_codepoint": 2.722114721721725,
+          "fragment_share": 0.9545240990831165,
+          "codepoints_vs_eng": 1.1675882718929849
+        }
+      }
+    },
+    "llama": {
+      "spec": "hf:meta-llama/Llama-3.2-3B@13afe5124825b4f3751f836b40dafda64c1ed062",
+      "by_lang": {
+        "eng": {
+          "codepoints": 257160,
+          "tokens": 52963,
+          "tokens_per_codepoint": 0.20595349198942292,
+          "fragment_share": 0.0,
+          "codepoints_vs_eng": 1.0
+        },
+        "hin": {
+          "codepoints": 256675,
+          "tokens": 133872,
+          "tokens_per_codepoint": 0.5215622869387357,
+          "fragment_share": 0.0023903430142225407,
+          "codepoints_vs_eng": 0.9981140146212475
+        },
+        "kan": {
+          "codepoints": 269776,
+          "tokens": 469659,
+          "tokens_per_codepoint": 1.7409220983334321,
+          "fragment_share": 0.9807711552424205,
+          "codepoints_vs_eng": 1.0490589516254472
+        },
+        "tam": {
+          "codepoints": 300257,
+          "tokens": 404178,
+          "tokens_per_codepoint": 1.3461068351445595,
+          "fragment_share": 0.8923197205191772,
+          "codepoints_vs_eng": 1.1675882718929849
+        }
+      }
+    },
+    "xlmr": {
+      "spec": "hf:FacebookAI/xlm-roberta-base@e73636d4f797dec63c3081bb6ed5c7b0bb3f2089",
+      "by_lang": {
+        "eng": {
+          "codepoints": 257160,
+          "tokens": 59656,
+          "tokens_per_codepoint": 0.2319800902162078,
+          "fragment_share": 0.0,
+          "codepoints_vs_eng": 1.0
+        },
+        "hin": {
+          "codepoints": 256675,
+          "tokens": 74855,
+          "tokens_per_codepoint": 0.29163338852634657,
+          "fragment_share": 0.0,
+          "codepoints_vs_eng": 0.9981140146212475
+        },
+        "kan": {
+          "codepoints": 269776,
+          "tokens": 81061,
+          "tokens_per_codepoint": 0.3004752090623332,
+          "fragment_share": 0.0,
+          "codepoints_vs_eng": 1.0490589516254472
+        },
+        "tam": {
+          "codepoints": 300257,
+          "tokens": 80442,
+          "tokens_per_codepoint": 0.26791049001355505,
+          "fragment_share": 0.0,
+          "codepoints_vs_eng": 1.1675882718929849
+        }
+      }
+    },
+    "indicbert": {
+      "spec": "hf:ai4bharat/IndicBERTv2-MLM-only@8598f13fe52443bc3fc054fcd665944560145b5c",
+      "by_lang": {
+        "eng": {
+          "codepoints": 257160,
+          "tokens": 52936,
+          "tokens_per_codepoint": 0.2058484989889563,
+          "fragment_share": 0.0,
+          "codepoints_vs_eng": 1.0
+        },
+        "hin": {
+          "codepoints": 256675,
+          "tokens": 62090,
+          "tokens_per_codepoint": 0.24190123697282556,
+          "fragment_share": 0.0,
+          "codepoints_vs_eng": 0.9981140146212475
+        },
+        "kan": {
+          "codepoints": 269776,
+          "tokens": 58076,
+          "tokens_per_codepoint": 0.2152748947274776,
+          "fragment_share": 0.0,
+          "codepoints_vs_eng": 1.0490589516254472
+        },
+        "tam": {
+          "codepoints": 300257,
+          "tokens": 55501,
+          "tokens_per_codepoint": 0.18484498279806966,
+          "fragment_share": 0.0,
+          "codepoints_vs_eng": 1.1675882718929849
+        }
+      }
+    }
+  }
+}

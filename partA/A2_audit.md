@@ -70,15 +70,20 @@ python partA/audit/mutation_check.py
 
 ### F4 — NFC normalisation (looks suspicious but fine)
 - **Claim tested:** NFC changes about 9% of Hindi FLORES lines (precomposed nukta letters, A1). Does that distort the result?
-- **Experiment:** `python partA/audit/experiments.py F4` under gpt2 and XLM-R.
-- **Result:** the largest effect is −0.11% (gpt2 hin) [E9] and +0.06% (XLM-R kan) [E10]. Under XLM-R, tokens change on only 3 Hindi lines [E11], while 183 lines change some metric [E12]. Its normaliser absorbs the nukta, so those 183 lines move only tok/char's code-point denominator.
+- **Experiment:** `python partA/audit/experiments.py F4` under gpt2 and XLM-R (v0 vs v0 with NFC off).
+- **Before → after:** FLORES hin fertility (gpt2) **7.8443 → 7.8353** (−0.11%) [E48, E49, E9]; FLORES kan (XLM-R) **2.5308 → 2.5324** (+0.06%) [E50, E51, E10].
+  - Under XLM-R, tokens change on only 3 Hindi lines [E11], while 183 lines change some metric [E12]. Its normaliser absorbs the nukta, so those 183 lines move only tok/char's code-point denominator.
+- **Why the delta proves it:** only the normalisation flag changed, and no metric moved by as much as 1% under either tokenizer, so NFC cannot be what distorts the report's numbers.
 - **Verdict:** negligible under D-14 for both tokenizers. Keeping NFC is fine.
 
 ### F5 — unused `random.seed(1337)` (technical debt)
-- **Evidence:**
-  - The AST shows `random` used only in its `import` and `.seed` (`tests/test_f5_seed.py`).
-  - v0's numbers are identical after perturbing the global RNG with three different seeds.
+- **Claim:** `random` is imported and seeded but never used, so it is technical debt with no effect on any result.
+- **Experiment:** `python -m pytest partA/tests/test_f5_seed.py -v`
+  - The AST of the original shows `random` used only in its `import` and `.seed`.
+  - v0 is re-run after perturbing the global RNG with seeds 0, 1337 and 2³¹−1.
   - v1 does not import `random`.
+- **Before → after:** toy hin fertility (gpt2, v0) **7.4485 → 7.4485** under every RNG state [E52]: identical to the last bit.
+- **Why the delta proves it:** the output is bit-identical whatever the RNG state, and the code never reads `random`, so removing the seed cannot change any result.
 - **Verdict:** no effect. Removed as debt. Mutants that reintroduce it are caught.
 
 ### F6 — `add_special_tokens=False` (looks suspicious but fine)
@@ -86,13 +91,14 @@ python partA/audit/mutation_check.py
 - **Experiment:** `python partA/audit/experiments.py F6` with `--special-tokens`.
   - Special tokens are modelled as a per-sequence count.
   - That count was verified against XLM-R's own `add_special_tokens=True` output on 400 FLORES lines.
-- **Result:** gpt2 exactly 0 (tiktoken adds none) [E16]. With XLM-R, counting `<s></s>` per line inflates FLORES eng by **+7.35%** [E17] and toy hin by **+23.74%** [E18], and pulls the hin ratio down 1.24% [E19].
+- **Before → after:** FLORES eng fertility (XLM-R) **1.4281 → 1.5331** (+7.35%) [E53, E54, E17]; toy hin (XLM-R) +23.74% [E18]; the hin ratio is pulled down 1.24% [E19]. gpt2: FLORES hin **7.8443 → 7.8443** (exactly 0; tiktoken adds none) [E55, E56, E16].
+- **Why the delta proves it:** the text is unchanged and fertility rises by exactly the tokenizer's added `<s></s>` per line (0 for gpt2), so counting them inflates fertility without any extra content. v0's `False` is the correct setting.
 - **Verdict:** v0's `False` is correct for a per-text metric. Flipping it would be false fertility, worse on short lines. Requests pay special tokens once each; that is A3's cost model, not fertility.
 
 ### F7 — tokens per *word* is not a cost ratio (conceptual flaw)
 - **Claim:** the code correctly computes tokens ÷ whitespace words, but words do not hold content constant across languages. The same FLORES sentences take 1.17× English's words in Hindi but 0.74× in Kannada (A1). A ratio of fertilities is therefore not a ratio of costs.
 - **Experiment:** `python partA/audit/experiments.py F7` (`denominator=sentence`), the same tokens per parallel sentence.
-- **Before → after (ratio vs eng, FLORES, gpt2):** hin **6.10 → 7.18** [E20, E21]; kan **17.40 → 13.11** (−24.64%) [E23, E22, E24]. XLM-R shows the same shifts (`A2_results.md` §1).
+- **Before → after:** ratio vs eng, FLORES, gpt2: hin **6.10 → 7.18** [E20, E21]; kan **17.40 → 13.11** (−24.64%) [E23, E22, E24]. XLM-R shows the same shifts (`A2_results.md` §1).
 - **Why the delta proves it:** the tokens are identical, so the shift is caused only by the denominator.
   - The ablation confirms this analytically. F7's contribution for kan is −26.43% under gpt2 [E42], and the same under XLM-R and Llama (`A2_results.md` §2). That equals 31,530/42,855 − 1, the kan/eng word ratio [E44, E45].
   - So the denominator, not the tokenizer, produces this distortion.
@@ -101,14 +107,15 @@ python partA/audit/mutation_check.py
 ### F8 — "tok/char confirms" is not independent (conceptual flaw)
 - **Claim:** code points mean different things in different scripts. Also, fertility and tok/char share the numerator, so their "agreement" is not a second measurement.
 - **Experiment:** `python partA/audit/experiments.py F8_graphemes` and `F8_bytes`.
-- **Result (same tokens, hin tok/char ratio vs eng, FLORES gpt2):** per code point 7.12 [E27], per grapheme **10.89** [E25], per UTF-8 byte **2.77** [E26]. Per byte under XLM-R it is **0.48** [E28]: Hindi looks *cheaper* than English.
+- **Before → after:** hin tok/char ratio vs eng, FLORES gpt2, same tokens: per code point **7.12 → 10.89** per grapheme [E27, E25], and **7.12 → 2.77** per UTF-8 byte [E26]. Per byte under XLM-R it is **0.48** [E28]: Hindi looks *cheaper* than English.
+- **Why the delta proves it:** the tokens are identical in every column; only the character unit changed, yet the "per-character premium" ranges from 2.77× to 10.89×. So tok/char measures the unit, not the tokenizer, and it cannot independently confirm the per-word number.
 - **The report's "agreement":** our reproduction gives 5.887 per word [E31] vs 6.998 per char [E29]. Both are tokens divided by different unit counts. Their ratio is just the characters-per-word ratio, not confirmation.
 
 ### F9 — GPT-2 is not our model's tokenizer (conceptual flaw)
 - **Claim:** leadership's cost is FLM-4B's tokens. gpt2's vocabulary is English-centric and is not the serving tokenizer.
 - **By the user's rule** (GPT-2 cost → validity flaw; our model's cost → conceptual flaw): the report says "cost **us**", so this is a conceptual flaw.
 - **Experiment:** `python partA/audit/experiments.py F9 --config v0` and `--config v1`. Config fixed; gpt2 swapped for Llama-3.2-3B (proxy, D-04).
-- **Result:**
+- **Before → after:**
   - v0 metric, toy hin: **5.89 → 2.08** [E31, E32].
   - V1, FLORES hin per sentence: **7.44 → 2.53 (−66.0%)** [E34, E35, E39].
   - English's own V1 value moves only +0.34% [E30].
@@ -202,3 +209,12 @@ Each row: ID | file | JSON path | value as quoted above. Verified by `partA/test
 | E45 | partA/corpus/stats.json | languages.eng_Latn.words | 42855 |
 | E46 | partA/corpus/stats.json | languages.eng_Latn.codepoints | 257160 |
 | E47 | partA/corpus/stats.json | languages.eng_Latn.words | 42855 |
+| E48 | partA/audit/results/F4_gpt2.json | before.flores.hin.fertility | 7.8443 |
+| E49 | partA/audit/results/F4_gpt2.json | after.flores.hin.fertility | 7.8353 |
+| E50 | partA/audit/results/F4_xlmr.json | before.flores.kan.fertility | 2.5308 |
+| E51 | partA/audit/results/F4_xlmr.json | after.flores.kan.fertility | 2.5324 |
+| E52 | partA/audit/results/F1_gpt2.json | before.toy.hin.fertility | 7.4485 |
+| E53 | partA/audit/results/F6_xlmr.json | before.flores.eng.fertility | 1.4281 |
+| E54 | partA/audit/results/F6_xlmr.json | after.flores.eng.fertility | 1.5331 |
+| E55 | partA/audit/results/F6_gpt2.json | before.flores.hin.fertility | 7.8443 |
+| E56 | partA/audit/results/F6_gpt2.json | after.flores.hin.fertility | 7.8443 |

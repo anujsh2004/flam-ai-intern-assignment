@@ -45,3 +45,17 @@ def test_given_audit_text_then_every_cited_id_exists_and_ids_are_unique():
     body = text.split("## Evidence index", 1)[0]
     cited = set(re.findall(r"E\d+", " ".join(re.findall(r"\[([^\]]*E\d+[^\]]*)\]", body))))
     assert cited - set(ids) == set()
+
+
+def finding_sections():
+    text = AUDIT.read_text(encoding="utf-8").split("## Findings", 1)[1].split("## Interactions", 1)[0]
+    return [s for s in re.split(r"^### ", text, flags=re.M) if s.startswith("F")]
+
+
+@pytest.mark.parametrize("section", finding_sections(), ids=lambda s: s.split(" ", 1)[0])
+def test_given_each_finding_then_the_evidence_rule_triplet_is_present(section):
+    """Brief: every claim ships with the exact command, before/after numbers, and one sentence
+    on why the delta proves it (unverified claimed flaws cost -5)."""
+    assert "**Experiment:**" in section and ("python " in section or "pytest" in section), "command"
+    assert "**Before → after:**" in section, "before/after numbers"
+    assert "**Why the delta proves it:**" in section, "why-sentence"

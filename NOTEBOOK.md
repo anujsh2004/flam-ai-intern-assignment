@@ -457,4 +457,17 @@ They reuse A1's tested `units.py`, so nothing is reimplemented. Built test-first
 - Reproduces the earlier quick measurement exactly: Llama kan 1.741 tok/code point with 98.1% byte fragments, tam 1.346 / 89.2%, hin 0.522 / 0.2%.
 - **New:** gpt2 also falls back to bytes for **Hindi** (94.5%), which explains the report's inflated Hindi number. XLM-R and IndicBERT have 0% fragments everywhere.
 
-**Memo:** 543 words with the 4 required parts. A test checks the order, the length and all 18 quoted numbers against the A3 results, the coverage JSON and the A2 F9 JSON. A test checks the sections are in order, the length is within a page, and all 15 quoted numbers are generated from `results.json`. Negative check: a changed value (A4 8.87 -> 8.88) and a missing ID (A99) both fail.
+**Memo:** 543 words with the 4 required parts. A test checks the order, the length and all 18 quoted numbers against the A3 results, the coverage JSON and the A2 F9 JSON.
+
+## 2026-10-23 — Finalize: reproducibility checks
+
+- **Starter kit:** 6/6 files byte-identical to the provided originals; touched only by the initial commit.
+- **Fresh-clone check, first attempt failed:** `git clone` into a deliberately deep folder (220+ characters) died on *git's own* `.git/hooks/fsmonitor-watchman.sample` (MAX_PATH). Any repository would fail at that depth; the repo's own paths are capped at 80 characters by a test.
+  - Lesson: test at a realistic depth. The README now says so and gives `core.longpaths`.
+- **Fresh clone at 155 characters:**
+  - before `prep.py`: 302 passed, 61 skipped (each with its fix-it reason), 0 failed;
+  - `prep.py` downloaded and hash-checked the archive; `manifest.json` came out identical to the committed one;
+  - then **363 passed**, and the clone's working tree stayed clean (no generated file drifted).
+- **README rewritten** as a deliverables map in assignment order, with setup and one command block per part.
+- **`state.md` rewritten** as the final record.
+- `AI_USAGE.md` is left to the author, as agreed. A test checks the sections are in order, the length is within a page, and all 15 quoted numbers are generated from `results.json`. Negative check: a changed value (A4 8.87 -> 8.88) and a missing ID (A99) both fail.

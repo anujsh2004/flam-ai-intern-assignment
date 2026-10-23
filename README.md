@@ -1,5 +1,7 @@
 # Flam AI Intern Assignment — The Audit
 
+> **This repository root is the `your-submission/` folder** from the brief: `NOTEBOOK.md`, `AI_USAGE.md`, `partA/`, `partB/` and `partC/memo.md` are here at the top level.
+
 An audit of a previous intern's tokenizer-fertility and serving-capacity report (`starter_kit/REPORT_v0.md`) before leadership makes routing and capacity decisions on it.
 
 ## Deliverables

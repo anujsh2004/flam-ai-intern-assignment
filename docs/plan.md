@@ -162,7 +162,19 @@ To-do:
 - ~~Final gate: full mutation run~~ **waived by the user** (D-19, risk accepted)
 - Carry to A4: commit the vocabulary-coverage measurement (why kan/tam are costlier) as a tested script.
 
-### Phase 4 — A4 memo — branch `part-a-memo`: 1 page, numbers pulled from generated results.
+### Phase 4 — A4 memo — branch `part-a-memo` (from `main` at `dfeace8`): 1 page, numbers pulled from generated results.
+Agreed with the user 2026-10-23, before writing:
+- **Headline numbers:** A3, Llama proxy, per parallel sentence. The output-token multiplier is assumed equal (replies are in the user's language).
+- **Routing:** the 4 approved recommendations; Sarvam-1 named as an untested option.
+- **Biggest caveat (re-checked):** the proxy tokenizer, the largest *measured* sensitivity. Second: production-traffic domain/script mix, labelled unmeasured.
+- **Production metric (re-checked; the earlier per-request-vs-English idea was flawed because live traffic has no parallel English):** tokens per code point by detected language and script vs the FLORES baseline; alert at ±20% weekly.
+- **Evidence:** `partA/analysis/coverage.py` (tested) gives tokens/code point and the byte-fragment share per language × tokenizer. It is both the "why Dravidian" evidence and the metric's baseline.
+
+To-do:
+- [ ] 1. `coverage.py` + tests (fake codec, hand-derived) + `coverage.json` + staleness test
+- [ ] 2. `partA/A4_memo.md` + test that its numbers match the JSON
+- [ ] 3. Docs; full suite; local merge after user approval
+- **Reminder owed to the user afterwards:** offer the defense cheat sheet.
 
 ### Phase 6 — C memo — branch `part-c-memo` (from `main` at `fc2a4a5`)
 Pre-registered 2026-10-23 with the user, before writing the memo.

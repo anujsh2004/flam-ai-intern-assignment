@@ -125,7 +125,8 @@ Sources must be real and read; none are cited yet. Where X/Twitter or articles a
 ## D-07 Part C approach (SFT vs rewriter vs prompting) — Open
 - **Constraints:** 1xA100-80GB for 2 wks; reviewer only for Hindi+Kannada, 10 h/wk (=20 h in the GPU window); launch review in 3 wks; no external API.
 - **Considerations to quantify:** SFT data volume vs reviewer verification capacity; rewriter adds latency per request and 6-language quality with no native check for 4 languages; prompting is cheapest and sets the baseline that SFT/rewriter must beat.
-- **Process:** decide after Phase 1-5 with numeric arithmetic; the day-1 experiment likely is a prompt-only baseline measured by the reviewer. Status: **Open.**
+- **Process:** decide after Phase 1-5 with numeric arithmetic; the day-1 experiment likely is a prompt-only baseline measured by the reviewer.
+- **Decided by user (2026-10-23):** (c) prompt-only is the launch path; (a) LoRA SFT on synthetic pairs is the fallback; (b) the rewriter is rejected. Launch hi+kn; the other 4 languages are monitored by automated checks until native validation. Metric: ≥70% casual and ≥95% meaning on n=200 per language. Kill criteria: day 5 / 50% and day 12 / 70%. Reviewer at 60/h with 30/90 sensitivity. Rationale is shown to the user and recorded in plan.md Phase 6. Status: **Decided; memo pending.**
 
 ## D-08 Authorship and attribution — Decided (user instruction)
 - User is the sole author on GitHub. No `Co-Authored-By` or tool-attribution lines in commits/PRs/files. Existing global git identity (`anujsh2004`) is used unchanged.

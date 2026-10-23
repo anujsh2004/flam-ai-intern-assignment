@@ -164,8 +164,22 @@ To-do:
 
 ### Phase 4 — A4 memo — branch `part-a-memo`: 1 page, numbers pulled from generated results.
 
-### Phase 6 — C memo — branch `part-c-memo`
-Dependencies: none technical; arithmetic needs consistency (A100 hours, reviewer 20 h total over 2 wks; reviewer covers only Hindi+Kannada). Day-1 experiment and kill criterion must be concrete.
+### Phase 6 — C memo — branch `part-c-memo` (from `main` at `fc2a4a5`)
+Pre-registered 2026-10-23 with the user, before writing the memo.
+- **Deliverable:** `partC/memo.md`, **1 page**, with explicitly labelled Assumptions / Arithmetic / Success metric / Kill criterion / Day-1 experiment. Numbers come from `partC/arithmetic.py` (tested); a test checks the memo's numbers against it.
+- **User decisions:**
+  - **Path:** (c) prompt-only is the **launch path**; (a) LoRA SFT on synthetic casualised pairs is the **planned fallback**; (b) the 1B rewriter is **rejected** (serving cost and latency on an already capacity-bound L4, and the same data problem as (a)). The best prompt is reused as the synthetic-pair generator.
+  - **Languages:** launch casual style for **Hindi + Kannada** (reviewer-validated). Te/ta/bn/mr get automated checks (back-translation meaning check, formality proxies) as **monitoring only**, launched after native validation.
+  - **Success metric:** on 200 held-out prompts per reviewed language, **≥70% judged casual-enough AND ≥95% meaning preserved** (judgement-based thresholds, stated as assumptions).
+  - **Kill criteria:** best prompt <50% casual on hi/kn by **day 5** -> switch to SFT; SFT <70% by **day 12** -> launch hi/kn with the best variant that keeps ≥95% meaning, or defer.
+  - **Reviewer throughput:** plan at 60 judgements/h (≈50/h effective), sensitivity 30/60/90; measured on day 1.
+- **Assumption:** the assistant is FLM-4B-Instruct on Part B's 1× L4 stack (same company, same stack; the brief names no other model). Labelled in the memo.
+
+To-do:
+- [x] 1. Pre-registration (`27d44f1`)
+- [x] 2. `partC/arithmetic.py` + tests (`6204ac0`)
+- [x] 3. `partC/memo.md`, 666 words, with all 15 numbers checked against `results.json`
+- [ ] 4. Docs; full suite; local merge after user approval
 
 ### Phase 7 — Finish — branch `finalize`
 README with exact reproduce commands; NOTEBOOK.md complete with dead ends; defense prep (re-derive each number from scratch; practice live flag addition).

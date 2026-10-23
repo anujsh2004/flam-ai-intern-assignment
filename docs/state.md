@@ -5,7 +5,14 @@ _Last updated: 2026-10-22 (A3 complete on `part-a-analysis`; merge into `main` a
 ## Current phase / task
 Phase 3 — **A3 is complete** on branch `part-a-analysis` (from `main` at `c155ad7`, after the A2 merge). Next: the user approves the `--no-ff` merge, then A4 (memo). Order: A1 -> A2 -> A3 -> A4 -> B -> C (D-10).
 
-## Part B outcome (branch `part-b-capacity`; details: `partB/answers.md`)
+## Part C outcome (branch `part-c-memo`; `partC/memo.md`)
+- **Recommendation:** (c) prompting is the launch path for hi+kn; (a) LoRA SFT on synthetic pairs is the fallback; (b) the rewriter is rejected (+24% decode work, ~19% fewer requests per L4).
+- **Success:** ≥70% casual and ≥95% meaning on n=200.
+- **Kill criteria:** day 5 / 50% -> switch to SFT; day 12 / 70% -> launch the best variant or defer.
+- **Day 1:** 2 prompt variants, with 50 blind pairs also measuring reviewer speed.
+- **Tests:** partC 27 passed. Merge pending user approval.
+
+## Part B outcome (merged into `main` at `fc2a4a5`; details: `partB/answers.md`)
 - **B1:** 114,688 B/token; about **25** concurrent 4096-token sequences (decimal GB, confirmed by two log checks).
 - **B2:** goodput peaks at b24 then falls with preemption. **Proposed: cap at 24** (+23.8%, from logged data); fp8 KV is the follow-up experiment (D-20).
 - **B3:** `reported_tok_s` counts prompt + gen. Honest b24 goodput is 200.92 / 200.93 tok/s. Log caveat: `e2e_p95` exceeds the wall clock on 12/13 rows.

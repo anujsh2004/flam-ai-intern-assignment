@@ -1,0 +1,120 @@
+{
+  "assumptions": {
+    "reviewer_hours_per_week": 10,
+    "gpu_weeks": 2,
+    "weeks_to_launch_review": 3,
+    "launch_langs": [
+      "hin",
+      "kan"
+    ],
+    "reviewer_rates_per_h": [
+      30,
+      60,
+      90
+    ],
+    "planning_rate_per_h": 60,
+    "calibration_judgements": 50,
+    "screen_variants": 2,
+    "screen_n_per_lang": 100,
+    "final_n_per_lang": 200,
+    "synthetic_spot_check": 200,
+    "pairs_per_lang": 2000,
+    "eng_tokens_per_pair": 200,
+    "epochs": 3,
+    "params": 4200000000.0,
+    "a100_bf16_flops": 312000000000000.0,
+    "mfu": 0.4,
+    "train_flops_per_param_token": 6,
+    "rewriter_params": 1000000000.0
+  },
+  "premiums": {
+    "hin": 2.5276513792647695,
+    "kan": 8.86768121141174,
+    "tam": 7.6313275305401875
+  },
+  "reviewer": {
+    "hours_in_gpu_window": 20,
+    "hours_to_launch_review": 30,
+    "judgements_by_rate": {
+      "30": 600,
+      "60": 1200,
+      "90": 1800
+    }
+  },
+  "budget": {
+    "30": {
+      "rate": 30,
+      "week1": {
+        "available": 300,
+        "calibration": 50,
+        "screening": 400,
+        "spare": -150
+      },
+      "week2": {
+        "available": 300,
+        "final_eval": 400,
+        "synthetic_spot_check": 200,
+        "spare": -300
+      },
+      "fits": false
+    },
+    "60": {
+      "rate": 60,
+      "week1": {
+        "available": 600,
+        "calibration": 50,
+        "screening": 400,
+        "spare": 150
+      },
+      "week2": {
+        "available": 600,
+        "final_eval": 400,
+        "synthetic_spot_check": 200,
+        "spare": 0
+      },
+      "fits": true
+    },
+    "90": {
+      "rate": 90,
+      "week1": {
+        "available": 900,
+        "calibration": 50,
+        "screening": 400,
+        "spare": 450
+      },
+      "week2": {
+        "available": 900,
+        "final_eval": 400,
+        "synthetic_spot_check": 200,
+        "spare": 300
+      },
+      "fits": true
+    }
+  },
+  "ci": {
+    "casual_0.70_n200": 0.06351125884439704,
+    "meaning_0.95_n200": 0.030205628614547998,
+    "screen_0.50_n100": 0.098
+  },
+  "sft": {
+    "tokens_per_pair": {
+      "hin": 505.5302758529539,
+      "kan": 1773.5362422823482
+    },
+    "tokens_per_epoch": 4558133.0362706045,
+    "tokens_total": 13674399.108811814
+  },
+  "training": {
+    "tokens_per_s": 4952.380952380952,
+    "hours": 0.766993539757073
+  },
+  "memory": {
+    "full_ft_states_gb": 67.2,
+    "lora_base_weights_gb": 8.4,
+    "a100_gb": 80
+  },
+  "rewriter": {
+    "extra_decode_fraction": 0.23809523809523808,
+    "capacity_loss_fraction": 0.1923076923076923
+  }
+}

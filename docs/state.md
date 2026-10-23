@@ -1,6 +1,6 @@
 # Project state
 
-_Last updated: 2026-10-23. **All parts complete** and merged into `main` locally. Remaining: `AI_USAGE.md` (author), push to GitHub (after user approval), optional defense cheat sheet._
+_Last updated: 2026-10-23. **All parts and deliverables complete**, merged into `main`, and verified before push. Remaining: push the final commits to GitHub (after user approval); optional defense cheat sheet._
 
 ## Status by part
 | Part | Deliverable | Headline | Merged into `main` |
@@ -12,13 +12,22 @@ _Last updated: 2026-10-23. **All parts complete** and merged into `main` locally
 | B | `partB/answers.md` | 114,688 B/token; ~25 concurrent 4K sequences (decimal GB, log-confirmed); goodput peaks at b24 then preemption; cap at 24 (+23.8%), fp8 KV as follow-up; `reported_tok_s` counts prompt + gen; b24 goodput 200.9 tok/s; counter `vllm:num_preemptions_total` | `fc2a4a5` |
 | C | `partC/memo.md` | Prompt-only launch for hi+kn; LoRA SFT fallback; rewriter rejected (+24% decode work); ≥70% casual / ≥95% meaning; kill at day 5 / day 12 | `dfeace8` |
 
-## Final verification (2026-10-23; all run, outputs read)
-- **Full suite:** `python -m pytest partA/tests partB/tests partC/tests` -> **363 passed**, on `main` after the A4 merge.
-- **Fresh `git clone` of `main`** (`f68e25a`, 155-character path):
-  - without FLORES text: 302 passed, 61 skipped, 0 failed;
+## Submission check against the brief (2026-10-23)
+- **Evidence rule:** completed for all 9 A2 findings (command, before → after, why-sentence), now enforced by a test.
+- **Layout:** the README states the repo root is the brief's `your-submission/` folder.
+- **`AI_USAGE.md`:** written. It covers where AI was used and to what extent, the user's decisions, testing after every task, and Claude's mistakes.
+- **Part C memo:** tightened to 547 words (≤ 550 enforced by a test). The A4 memo is 543 words.
+- **Plan:** every to-do item in `docs/plan.md` is ticked.
+
+## Final verification before push (2026-10-23; all run, outputs read)
+- **Full suite:** `python -m pytest partA/tests partB/tests partC/tests` -> **381 passed** on `main` (`2284a51`).
+- **Fresh `git clone` of that `main`** (156-character path):
+  - without FLORES text: 320 passed, 61 skipped, 0 failed;
   - `prep.py` from scratch: hash-checked, `manifest.json` identical to the committed one;
-  - then the full suite: **363 passed**;
+  - then the full suite: **381 passed**;
   - clone working tree unchanged afterwards (no generated-file drift).
+- **Assignment checklist:** NOTEBOOK, AI_USAGE, A1–A4, B1–B4 and C all present, with their required sections and length limits.
+- **Safety:** no FLORES text, raw archive, venv, `.env` or token-like strings tracked in any commit.
 - **Starter kit:** 6/6 files byte-identical to the provided originals (`cmp`); touched only by the initial commit `bd21ead`.
 - **Mutation testing:**
   - A2: full run 50/50;
@@ -35,9 +44,8 @@ _Last updated: 2026-10-23. **All parts complete** and merged into `main` locally
 - **Windows clone depth:** cloning into a very deep folder hits MAX_PATH on git's own `.git/hooks` files (any repo). Noted in the README.
 
 ## Remaining
-1. `AI_USAGE.md`: written by the user (required by the assignment).
-2. Push to GitHub: only after the user approves.
-3. Defense cheat sheet: offer to the user (reminder owed).
+1. Push the final commits to GitHub, only after the user approves. The first push of all branches was done earlier at the user's request.
+2. Defense cheat sheet: offer to the user (reminder owed).
 
 ## Environment
 - **Venv:** `.venv` on Python 3.14.0 with pinned `requirements.txt`.

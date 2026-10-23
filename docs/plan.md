@@ -171,8 +171,8 @@ Agreed with the user 2026-10-23, before writing:
 - **Evidence:** `partA/analysis/coverage.py` (tested) gives tokens/code point and the byte-fragment share per language × tokenizer. It is both the "why Dravidian" evidence and the metric's baseline.
 
 To-do:
-- [ ] 1. `coverage.py` + tests (fake codec, hand-derived) + `coverage.json` + staleness test
-- [ ] 2. `partA/A4_memo.md` + test that its numbers match the JSON
+- [x] 1. `coverage.py` + tests + `coverage.json` (`7e45f1b`)
+- [x] 2. `partA/A4_memo.md`: 543 words, all 18 numbers checked against the JSON
 - [ ] 3. Docs; full suite; local merge after user approval
 - **Reminder owed to the user afterwards:** offer the defense cheat sheet.
 

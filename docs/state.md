@@ -5,7 +5,21 @@ _Last updated: 2026-10-22 (A3 complete on `part-a-analysis`; merge into `main` a
 ## Current phase / task
 Phase 3 — **A3 is complete** on branch `part-a-analysis` (from `main` at `c155ad7`, after the A2 merge). Next: the user approves the `--no-ff` merge, then A4 (memo). Order: A1 -> A2 -> A3 -> A4 -> B -> C (D-10).
 
-## Part C outcome (branch `part-c-memo`; `partC/memo.md`)
+## A4 outcome (branch `part-a-memo`; `partA/A4_memo.md`)
+- **Headline:** hin 2.53×, kan 8.87×, tam 7.63× (serving tokenizer, per sentence).
+- **Routing:** budget per language; the pressure is Dravidian (byte fallback); evaluate an Indic vocabulary; verify with FLM-4B's tokenizer first.
+- **Caveat:** the proxy tokenizer, then the unmeasured domain mix.
+- **Metric:** tokens per code point by language and script vs FLORES, ±20% weekly.
+- **Merge:** pending user approval.
+- **Reminder owed to the user:** offer the **defense cheat sheet** once the remaining work is done.
+
+## Remaining after A4
+1. Finalize: NOTEBOOK pass, README, state; starter-kit and fresh-clone checks; final full suite.
+2. `AI_USAGE.md`, written by the user.
+3. Push to GitHub, after user approval.
+4. Defense cheat sheet: remind the user.
+
+## Part C outcome (merged into `main` at `dfeace8`; `partC/memo.md`)
 - **Recommendation:** (c) prompting is the launch path for hi+kn; (a) LoRA SFT on synthetic pairs is the fallback; (b) the rewriter is rejected (+24% decode work, ~19% fewer requests per L4).
 - **Success:** ≥70% casual and ≥95% meaning on n=200.
 - **Kill criteria:** day 5 / 50% -> switch to SFT; day 12 / 70% -> launch the best variant or defer.
